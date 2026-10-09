@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-950 text-white">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evreka Pizza - Admin & POS Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Plus Jakarta Sans', sans-serif; } </style>
+</head>
+<body class="h-full bg-slate-900 p-4">
+
+  <!-- ŞİFRELİ GİRİŞ EKRANI -->
+  <div id="login-screen" class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl text-center space-y-4">
+    <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">🔐</div>
+    <h2 class="text-xl font-black">Garson / Admin Girişi</h2>
+    <p class="text-xs text-slate-400">Sunucu doğrulamalı yönetim paneli.</p>
+    <input type="password" id="pass-input" placeholder="Yönetici Şifreniz (Varsayılan: 1234)" class="w-full text-center bg-slate-900 border border-slate-700 rounded-2xl py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+    <button onclick="loginServer()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-2xl text-xs transition">Giriş Yap</button>
+  </div>
+
+  <!-- CANLI DASHBOARD -->
+  <div id="dashboard" class="max-w-5xl mx-auto hidden space-y-5">
+    
+    <!-- Üst Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+      <div>
+        <h1 class="text-xl font-black flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span> Canlı POS & Mutfak Paneli
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Sipariş Hazırlama, Masaya Servis ve POS Ödeme Akışı</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="playNotificationSound()" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-black text-xs px-3 py-2 rounded-xl border border-amber-500/30 font-bold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-volume-high"></i> Ses Testi
+        </button>
+        <button onclick="fetchOrdersFromServer()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl border border-slate-700 font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate"></i> Yenile
+        </button>
+        <button onclick="logout()" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white text-xs px-3 py-2 rounded-xl border border-red-500/30 font-bold">
+          Çıkış
+        </button>
+      </div>
+    </div>
+
+    <!-- İSTATİSTİK BARI -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+        <span class="text-slate-400 font-bold block mb-1">Toplam Ciro</span>
+        <span class="text-lg font-black text-emerald-400" id="stat-ciro">0 ₺</span>
+      </div>
+      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+        <span class="text-slate-400 font-bold block mb-1">Onay Bekleyen</span>
+        <span class="text-lg font-black text-amber-400" id="stat-bekleyen">0</span>
+      </div>
+      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+        <span class="text-slate-400 font-bold block mb-1">Mutfakta</span>
+        <span class="text-lg font-black text-emerald-400" id="stat-mutfakta">0</span>
+      </div>
+      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+        <span class="text-slate-400 font-bold block mb-1">Ödeme Bekleyen</span>
+        <span class="text-lg font-black text-indigo-400" id="stat-servis">0</span>
+      </div>
+    </div>
+
+    <!-- Durum Filtreleme Tabları -->
+    <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+      <button onclick="setFilter('ALL')" id="filter-ALL" class="px-4 py-2 rounded-xl font-extrabold bg-red-600 text-white">Aktif Siparişler (<span id="count-ALL">0</span>)</button>
+      <button onclick="setFilter('WAITING')" id="filter-WAITING" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-amber-400 border border-slate-700">Yeni Gelenler (<span id="count-WAITING">0</span>)</button>
+      <button onclick="setFilter('PREPARING')" id="filter-PREPARING" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-emerald-400 border border-slate-700">Mutfakta (<span id="count-PREPARING">0</span>)</button>
+      <button onclick="setFilter('SERVED')" id="filter-SERVED" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-indigo-400 border border-slate-700">Ödeme Bekleyenler (<span id="count-SERVED">0</span>)</button>
+      <button onclick="setFilter('PAID')" id="filter-PAID" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700">Tamamlananlar (<span id="count-PAID">0</span>)</button>
+    </div>
+
+    <!-- Sipariş Kartları Listesi -->
+    <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+
+  <!-- ÖDEME ALMA MODALI (POS POPUP) -->
+  <div id="payment-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <div>
+          <h3 class="text-lg font-black text-white" id="pay-modal-table">Masa - Ödeme Al</h3>
+          <p class="text-xs text-slate-400" id="pay-modal-id">Sipariş #000</p>
+        </div>
+        <button onclick="closePaymentModal()" class="w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center hover:bg-slate-600">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Tutar Bilgisi -->
+      <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700/60 text-center">
+        <span class="text-xs text-slate-400 font-bold uppercase block">Tahsil Edilecek Tutar</span>
+        <span class="text-3xl font-black text-emerald-400 mt-1 block" id="pay-modal-amount">0 ₺</span>
+      </div>
+
+      <!-- Ödeme Yöntemi Seçenekleri -->
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-400 uppercase">Ödeme Yöntemini Seçin</label>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="selectPaymentType('Kredi Kartı')" id="btn-pay-card" class="p-4 rounded-2xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
+            <i class="fa-solid fa-credit-card text-2xl"></i>
+            Kredi Kartı (POS)
+          </button>
+          
+          <button onclick="selectPaymentType('Nakit')" id="btn-pay-cash" class="p-4 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
+            <i class="fa-solid fa-money-bill-wave text-2xl"></i>
+            Nakit Ödeme
+          </button>
+        </div>
+      </div>
+
+      <!-- POS İletişim Durumu -->
+      <div id="pos-status-area" class="hidden bg-slate-900/90 p-3 rounded-xl border border-slate-700 text-center text-xs space-y-1">
+        <span class="text-amber-400 font-bold animate-pulse block" id="pos-status-text">POS Cihazına İstek Gönderiliyor...</span>
+        <span class="text-[10px] text-slate-400 block">Lütfen kartı okutunuz veya şifre giriniz.</span>
+      </div>
+
+      <button id="confirm-pay-btn" onclick="processPayment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-900/40 transition">
+        Ödemeyi Onayla ve Masayı Kapat
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let currentFilter = 'ALL';
+    let cachedOrders = [];
+    let previousOrderCount = 0;
+    let selectedOrderForPay = null;
+    let selectedPaymentMethod = 'Kredi Kartı';
+    let localStatusOverrides = {}; // Sunucu tarafı status desteklemiyorsa yerel hafızada tutma köprüsü
+
+    // BİLDİRİM SESİ
+    function playNotificationSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function createTone(freq, startTime, duration) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime + startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + startTime);
+          osc.stop(audioCtx.currentTime + startTime + duration);
+        }
+        createTone(880, 0, 0.15);
+        createTone(1174.66, 0.18, 0.3);
+      } catch (e) {
+        console.warn('AudioContext izni gerekiyor:', e);
+      }
+    }
+
+    async function loginServer() {
+      const pass = document.getElementById('pass-input').value;
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('login-screen').classList.add('hidden');
+          document.getElementById('dashboard').classList.remove('hidden');
+          playNotificationSound();
+          fetchOrdersFromServer();
+          setInterval(fetchOrdersFromServer, 3000);
+        } else {
+          alert(data.error || 'Geçersiz Şifre!');
+        }
+      } catch (err) {
+        alert('Sunucuya bağlanılamadı.');
+      }
+    }
+
+    function logout() { location.reload(); }
+
+    async function fetchOrdersFromServer() {
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success) {
+          let newOrders = data.orders || [];
+
+          // Yerel durum değişikliklerini uygula
+          newOrders = newOrders.map(o => {
+            if (localStatusOverrides[o.id]) {
+              return { ...o, status: localStatusOverrides[o.id] };
+            }
+            return o;
+          });
+
+          const waitingOrders = newOrders.filter(o => isWaitingStatus(o.status));
+          if (waitingOrders.length > previousOrderCount) {
+            playNotificationSound();
+          }
+          previousOrderCount = waitingOrders.length;
+
+          cachedOrders = newOrders;
+          updateCounts();
+          renderOrders();
+        }
+      } catch (err) {
+        console.error('Polling hatası:', err);
+      }
+    }
+
+    function isWaitingStatus(status) {
+      return status === 'WAITING' || status === 'WAITING_WAITER';
+    }
+
+    function updateCounts() {
+      document.getElementById('count-ALL').innerText = cachedOrders.filter(o => o.status !== 'CANCELLED' && o.status !== 'PAID').length;
+      
+      const waiting = cachedOrders.filter(o => isWaitingStatus(o.status)).length;
+      const preparing = cachedOrders.filter(o => o.status === 'PREPARING').length;
+      const served = cachedOrders.filter(o => o.status === 'SERVED').length;
+      const paid = cachedOrders.filter(o => o.status === 'PAID').length;
+
+      document.getElementById('count-WAITING').innerText = waiting;
+      document.getElementById('count-PREPARING').innerText = preparing;
+      document.getElementById('count-SERVED').innerText = served;
+      document.getElementById('count-PAID').innerText = paid;
+
+      const toplamCiro = cachedOrders
+        .filter(o => o.status === 'PAID')
+        .reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+
+      document.getElementById('stat-ciro').innerText = `${toplamCiro.toLocaleString('tr-TR')} ₺`;
+      document.getElementById('stat-bekleyen').innerText = waiting;
+      document.getElementById('stat-mutfakta').innerText = preparing;
+      document.getElementById('stat-servis').innerText = served;
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+        btn.className = "px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-300 border border-slate-700";
+      });
+      const activeBtn = document.getElementById(`filter-${filter}`);
+      if (activeBtn) activeBtn.className = "px-4 py-2 rounded-xl font-extrabold bg-red-600 text-white";
+      renderOrders();
+    }
+
+    // DURUM GÜNCELLEME (ONAY / MASAYA SERVİS / ÖDENDİ)
+    async function updateOrderStatus(id, newStatus) {
+      localStatusOverrides[id] = newStatus; // Anında UI güncellemesi için kaydedilir
+      
+      const order = cachedOrders.find(o => String(o.id) === String(id));
+      if (order) {
+        order.status = newStatus;
+      }
+      
+      renderOrders();
+
+      // Arka planda sunucuya istek gönder
+      try {
+        if (newStatus === 'PREPARING') {
+          await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
+        } else {
+          await fetch(`/api/orders/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+        }
+      } catch (err) {
+        console.warn('API durum bildirimi kaydedilemedi, yerel durum korundu:', err);
+      }
+    }
+
+    // ÖDEME POPUP AÇ
+    function openPaymentModal(orderId) {
+      selectedOrderForPay = cachedOrders.find(o => String(o.id) === String(orderId));
+      if (!selectedOrderForPay) return;
+
+      document.getElementById('pay-modal-table').innerText = `${selectedOrderForPay.tableName} - Ödeme Al`;
+      document.getElementById('pay-modal-id').innerText = `Sipariş #${selectedOrderForPay.id}`;
+      document.getElementById('pay-modal-amount').innerText = `${selectedOrderForPay.totalPrice} ₺`;
+      
+      selectPaymentType('Kredi Kartı');
+      document.getElementById('pos-status-area').classList.add('hidden');
+      document.getElementById('payment-modal').classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('payment-modal').classList.add('hidden');
+    }
+
+    function selectPaymentType(type) {
+      selectedPaymentMethod = type;
+      const cardBtn = document.getElementById('btn-pay-card');
+      const cashBtn = document.getElementById('btn-pay-cash');
+
+      if (type === 'Kredi Kartı') {
+        cardBtn.className = "p-4 rounded-2xl border-2 border-indigo-500 bg-indigo-500/20 text-indigo-300 font-black text-xs flex flex-col items-center gap-2 transition";
+        cashBtn.className = "p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 font-bold text-xs flex flex-col items-center gap-2 transition opacity-60";
+      } else {
+        cashBtn.className = "p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black text-xs flex flex-col items-center gap-2 transition";
+        cardBtn.className = "p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 font-bold text-xs flex flex-col items-center gap-2 transition opacity-60";
+      }
+    }
+
+    // POS İŞLEM VE MASA KAPATMA
+    async function processPayment() {
+      const btn = document.getElementById('confirm-pay-btn');
+      const statusArea = document.getElementById('pos-status-area');
+      const statusText = document.getElementById('pos-status-text');
+
+      btn.disabled = true;
+      statusArea.classList.remove('hidden');
+
+      if (selectedPaymentMethod === 'Kredi Kartı') {
+        statusText.innerText = "📲 POS Cihazı İle İletişim Kuruluyor...";
+        await new Promise(r => setTimeout(r, 1000));
+        statusText.innerText = "💳 Kart Okutuldu, Onay Bekleniyor...";
+        await new Promise(r => setTimeout(r, 1200));
+      } else {
+        statusText.innerText = "💵 Nakit Tahsilat Kaydediliyor...";
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      await updateOrderStatus(selectedOrderForPay.id, 'PAID');
+      
+      btn.disabled = false;
+      closePaymentModal();
+    }
+
+    // İPTAL ET
+    async function cancelOrder(id) {
+      if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return;
+      try {
+        localStatusOverrides[id] = 'CANCELLED';
+        const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        fetchOrdersFromServer();
+      } catch (err) {
+        alert('Hata oluştu.');
+      }
+    }
+
+    function renderOrders() {
+      const container = document.getElementById('orders-container');
+
+      let filtered = cachedOrders;
+      if (currentFilter === 'WAITING') {
+        filtered = cachedOrders.filter(o => isWaitingStatus(o.status));
+      } else if (currentFilter !== 'ALL') {
+        filtered = cachedOrders.filter(o => o.status === currentFilter);
+      } else {
+        filtered = cachedOrders.filter(o => o.status !== 'CANCELLED' && o.status !== 'PAID');
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="col-span-full p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">Sipariş bulunamadı.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(o => {
+        const timeFormatted = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Anlık';
+        
+        let statusBadge = '';
+        let actionButtons = '';
+
+        if (isWaitingStatus(o.status)) {
+          statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Onay Bekliyor</span>';
+          actionButtons = `
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="updateOrderStatus('${o.id}', 'PREPARING')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20">
+                <i class="fa-solid fa-fire"></i> Onayla (Mutfağa)
+              </button>
+              <button onclick="cancelOrder('${o.id}')" class="bg-slate-700 hover:bg-red-600/30 hover:text-red-400 text-slate-300 font-bold text-xs py-2.5 rounded-xl transition">
+                İptal Et
+              </button>
+            </div>
+          `;
+        } else if (o.status === 'PREPARING') {
+          statusBadge = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Mutfakta Hazırlanıyor</span>';
+          actionButtons = `
+            <button onclick="updateOrderStatus('${o.id}', 'SERVED')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
+              <i class="fa-solid fa-bell"></i> Hazır / Masaya Servis Et
+            </button>
+          `;
+        } else if (o.status === 'SERVED') {
+          statusBadge = '<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Masada / Ödeme Bekliyor</span>';
+          actionButtons = `
+            <button onclick="openPaymentModal('${o.id}')" class="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
+              <i class="fa-solid fa-credit-card"></i> 💳 Ödeme Al (POS)
+            </button>
+          `;
+        } else if (o.status === 'PAID') {
+          statusBadge = '<span class="bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">Tamamlandı (Ödendi)</span>';
+          actionButtons = `<div class="text-center text-xs text-slate-500 font-bold py-1">Masa Kapatıldı ✅</div>`;
+        } else if (o.status === 'CANCELLED') {
+          statusBadge = '<span class="bg-slate-700 text-slate-400 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">İptal Edildi</span>';
+        }
+
+        return `
+          <div class="bg-slate-800 border border-slate-700/80 rounded-3xl p-5 shadow-xl flex flex-col justify-between gap-4">
+            <div>
+              <!-- Başlık -->
+              <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl shadow-md">${o.tableName}</span>
+                  <span class="text-xs font-mono text-slate-400 font-bold">#${o.id}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-bold"><i class="fa-regular fa-clock text-slate-500"></i> ${timeFormatted}</span>
+                </div>
+              </div>
+
+              <!-- Kalemler -->
+              <div class="space-y-2">
+                ${(o.items || []).map(i => `
+                  <div class="bg-slate-900/60 p-2.5 rounded-xl text-xs border border-slate-700/30 flex justify-between items-start">
+                    <div>
+                      <span class="font-extrabold text-slate-200">${i.title}</span>${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
+                      ${i.extras && i.extras.length > 0 ? `<p class="text-[10px] text-slate-400 mt-0.5">+ ${i.extras.join(', ')}</p>` : ''}
+                      ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5"><i class="fa-solid fa-comment-dots"></i> Not: "${i.note}"</p>` : ''}
+                    </div>
+                    <span class="font-black text-white ml-2 whitespace-nowrap">${i.price} ₺</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Aksiyonlar -->
+            <div class="border-t border-slate-700/60 pt-3 mt-1 flex flex-col gap-3">
+              <div class="flex items-center justify-between">
+                ${statusBadge}
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Toplam Tutar</span>
+                  <span class="text-lg font-black text-amber-400">${o.totalPrice} ₺</span>
+                </div>
+              </div>
+
+              ${actionButtons}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
