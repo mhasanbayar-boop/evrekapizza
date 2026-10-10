@@ -11,6 +11,9 @@
 </head>
 <body class="h-full bg-slate-900 p-4">
 
+  <!-- SAĞ ÜST TOAST BİLDİRİM ALANI -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
   <!-- ŞİFRELİ GİRİŞ EKRANI -->
   <div id="login-screen" class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl text-center space-y-4 hidden">
     <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">🔐</div>
@@ -22,8 +25,6 @@
 
   <!-- CANLI DASHBOARD -->
   <div id="dashboard" class="max-w-5xl mx-auto hidden space-y-5">
-    
-    <!-- Üst Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
       <div>
         <h1 class="text-xl font-black flex items-center gap-2">
@@ -73,11 +74,10 @@
       <button onclick="setFilter('PAID')" id="filter-PAID" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700">Tamamlananlar (<span id="count-PAID">0</span>)</button>
     </div>
 
-    <!-- Sipariş Kartları Listesi -->
     <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
-  <!-- ÖDEME ALMA MODALI (POS POPUP) -->
+  <!-- ÖDEME ALMA MODALI -->
   <div id="payment-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -99,12 +99,10 @@
         <label class="block text-xs font-bold text-slate-400 uppercase">Ödeme Yöntemini Seçin</label>
         <div class="grid grid-cols-2 gap-3">
           <button onclick="selectPaymentType('Kredi Kartı')" id="btn-pay-card" class="p-4 rounded-2xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
-            <i class="fa-solid fa-credit-card text-2xl"></i>
-            Kredi Kartı (POS)
+            <i class="fa-solid fa-credit-card text-2xl"></i> Kredi Kartı (POS)
           </button>
           <button onclick="selectPaymentType('Nakit')" id="btn-pay-cash" class="p-4 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
-            <i class="fa-solid fa-money-bill-wave text-2xl"></i>
-            Nakit Ödeme
+            <i class="fa-solid fa-money-bill-wave text-2xl"></i> Nakit Ödeme
           </button>
         </div>
       </div>
@@ -120,14 +118,31 @@
     </div>
   </div>
 
+  <!-- İPTAL ONAY MODALI -->
+  <div id="cancel-confirm-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4">
+      <div class="w-14 h-14 bg-red-600/20 text-red-400 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-red-500/30">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-black text-white">Siparişi İptal Et</h3>
+        <p class="text-xs text-slate-400 mt-1">Bu siparişi iptal etmek istediğinize emin misiniz? İşlem geri alınamaz.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="closeCancelModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl text-xs transition">Vazgeç</button>
+        <button id="confirm-cancel-btn" class="bg-red-600 hover:bg-red-500 text-white font-extrabold py-3 rounded-2xl text-xs transition shadow-lg shadow-red-900/40">Evet, İptal Et</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentFilter = 'ALL';
     let cachedOrders = [];
     let previousOrderCount = 0;
     let selectedOrderForPay = null;
     let selectedPaymentMethod = 'Kredi Kartı';
-    
-    // SUNUCU RESTART ATINCA BİLE VERİYİ KORUYAN KALICI YEREL SİPARİŞ DEPOSU
+    let pendingCancelOrderId = null;
+
     let localPersistentOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
     let localStatusOverrides = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
@@ -142,6 +157,22 @@
         document.getElementById('login-screen').classList.remove('hidden');
       }
     });
+
+    function showToast(message, type = 'success') {
+      const cont = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto p-3.5 rounded-2xl border shadow-xl flex items-center gap-2.5 text-xs font-bold transition-all transform translate-x-full duration-300 ${
+        type === 'success' ? 'bg-slate-800 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 border-red-500/50 text-red-400'
+      }`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-xmark text-red-400'} text-base"></i> <span>${message}</span>`;
+      cont.appendChild(toast);
+      
+      setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+      setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
 
     function playNotificationSound() {
       try {
@@ -179,20 +210,22 @@
           document.getElementById('login-screen').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
           playNotificationSound();
+          showToast("Giriş başarılı, hoş geldiniz!");
           fetchOrdersFromServer();
           setInterval(fetchOrdersFromServer, 3000);
         } else {
-          alert(data.error || 'Geçersiz Şifre!');
+          showToast(data.error || 'Geçersiz Şifre!', 'error');
         }
       } catch (err) {
         if (pass === '1234') {
           sessionStorage.setItem('evreka_admin_logged', 'true');
           document.getElementById('login-screen').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
+          showToast("Giriş başarılı!");
           fetchOrdersFromServer();
           setInterval(fetchOrdersFromServer, 3000);
         } else {
-          alert('Sunucuya bağlanılamadı.');
+          showToast('Sunucuya bağlanılamadı.', 'error');
         }
       }
     }
@@ -212,7 +245,6 @@
           serverOrders = data.orders;
         }
 
-        // Sunucudan gelen ve yerelde önceden saklanan siparişleri birleştir (Merge)
         serverOrders.forEach(so => {
           const existsIndex = localPersistentOrders.findIndex(lo => String(lo.id) === String(so.id));
           if (existsIndex > -1) {
@@ -222,7 +254,6 @@
           }
         });
 
-        // Durum güncellemelerini yerel hafızadan uygula
         localPersistentOrders = localPersistentOrders.map(o => {
           if (localStatusOverrides[o.id]) {
             return { ...o, status: localStatusOverrides[o.id] };
@@ -235,6 +266,7 @@
         const waitingOrders = localPersistentOrders.filter(o => isWaitingStatus(o.status));
         if (waitingOrders.length > previousOrderCount) {
           playNotificationSound();
+          showToast("🛎️ Yeni sipariş düştü!");
         }
         previousOrderCount = waitingOrders.length;
 
@@ -242,7 +274,6 @@
         updateCounts();
         renderOrders();
       } catch (err) {
-        // Sunucu kapalı veya restart atıyorsa yerel veriden devam et
         cachedOrders = localPersistentOrders;
         updateCounts();
         renderOrders();
@@ -300,6 +331,10 @@
       updateCounts();
       renderOrders();
 
+      if (newStatus === 'PREPARING') showToast(`Sipariş #${id} Mutfağa Gönderildi`);
+      else if (newStatus === 'SERVED') showToast(`Sipariş #${id} Masaya Servis Edildi`);
+      else if (newStatus === 'PAID') showToast(`Sipariş #${id} Tahsil Edildi ve Kapatıldı`);
+
       try {
         if (newStatus === 'PREPARING') {
           await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
@@ -311,7 +346,7 @@
           });
         }
       } catch (err) {
-        console.warn('Sunucu erişilemez, yerel hafıza güncellendi.');
+        // Yerel saklama yedekli çalışır
       }
     }
 
@@ -356,12 +391,12 @@
 
       if (selectedPaymentMethod === 'Kredi Kartı') {
         statusText.innerText = "📲 POS Cihazı İle İletişim Kuruluyor...";
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 800));
         statusText.innerText = "💳 Kart Okutuldu, Onay Bekleniyor...";
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 1000));
       } else {
         statusText.innerText = "💵 Nakit Tahsilat Kaydediliyor...";
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 500));
       }
 
       await updateOrderStatus(selectedOrderForPay.id, 'PAID');
@@ -370,15 +405,31 @@
       closePaymentModal();
     }
 
-    async function cancelOrder(id) {
-      if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return;
+    function openCancelModal(id) {
+      pendingCancelOrderId = id;
+      document.getElementById('cancel-confirm-modal').classList.remove('hidden');
+      document.getElementById('confirm-cancel-btn').onclick = executeCancelOrder;
+    }
+
+    function closeCancelModal() {
+      pendingCancelOrderId = null;
+      document.getElementById('cancel-confirm-modal').classList.add('hidden');
+    }
+
+    async function executeCancelOrder() {
+      if (!pendingCancelOrderId) return;
+      const id = pendingCancelOrderId;
+      
+      localStatusOverrides[id] = 'CANCELLED';
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
+      showToast(`Sipariş #${id} İptal Edildi`, 'error');
+      closeCancelModal();
+
       try {
-        localStatusOverrides[id] = 'CANCELLED';
-        localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
         await fetch(`/api/orders/${id}`, { method: 'DELETE' });
         fetchOrdersFromServer();
       } catch (err) {
-        alert('Hata oluştu.');
+        fetchOrdersFromServer();
       }
     }
 
@@ -412,7 +463,7 @@
               <button onclick="updateOrderStatus('${o.id}', 'PREPARING')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20">
                 <i class="fa-solid fa-fire"></i> Onayla (Mutfağa)
               </button>
-              <button onclick="cancelOrder('${o.id}')" class="bg-slate-700 hover:bg-red-600/30 hover:text-red-400 text-slate-300 font-bold text-xs py-2.5 rounded-xl transition">
+              <button onclick="openCancelModal('${o.id}')" class="bg-slate-700 hover:bg-red-600/30 hover:text-red-400 text-slate-300 font-bold text-xs py-2.5 rounded-xl transition">
                 İptal Et
               </button>
             </div>
