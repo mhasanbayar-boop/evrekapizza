@@ -170,6 +170,28 @@
     </div>
   </div>
 
+  <!-- ÖZEL SİPARİŞ BAŞARI MODALI (ÇIRAK ALERTSİZ ŞIK EKRAN) -->
+  <div id="order-success-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-5">
+      <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner border border-emerald-500/30">
+        <i class="fa-solid fa-check animate-bounce"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-black text-white">Siparişiniz Alındı!</h3>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz garsonumuza ve mutfağımıza başarıyla iletildi. Yukarıdaki panelden canlı olarak takip edebilirsiniz.</p>
+      </div>
+      
+      <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs flex justify-between items-center font-bold">
+        <span class="text-slate-400">Atanan Masa:</span>
+        <span class="text-amber-400" id="success-modal-table">Masa -</span>
+      </div>
+
+      <button onclick="closeSuccessModalAndTrack()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrow-up"></i> Harika, Takibe Başla
+      </button>
+    </div>
+  </div>
+
   <!-- ZORUNLU MASA SEÇİM MODALI -->
   <div id="table-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-slate-100">
@@ -277,7 +299,6 @@
         startOrderTracking(activeOrderId);
       }
 
-      // Garson panelinin hafızayı güncellemesini anında dinle (Storage Event)
       window.addEventListener('storage', (e) => {
         if (e.key === 'evreka_order_statuses' && activeOrderId) {
           syncDirectFromLocalStorage();
@@ -514,7 +535,6 @@
           activeOrderId = data.order.id;
           localStorage.setItem('evreka_active_order_id', activeOrderId);
           
-          // Yerel depoya varsayılan WAITING olarak kaydet
           let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
           localStatuses[activeOrderId] = 'WAITING';
           localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
@@ -522,7 +542,10 @@
           cart = [];
           updateCartBar();
           toggleCartDrawer();
-          startOrderTracking(activeOrderId);
+
+          // Çirkin tarayıcı uyarısı yerine ŞIK BAŞARI MODALINI AÇ
+          document.getElementById('success-modal-table').innerText = currentTable;
+          document.getElementById('order-success-modal').classList.remove('hidden');
         } else {
           alert(data.error || 'Sipariş gönderilemedi.');
         }
@@ -534,14 +557,19 @@
       }
     }
 
-    // ⚡ KESİN ÇÖZÜM: DOĞRUDAN YEREL HAFIZA HİBRİT TAKİP MOTORU
+    function closeSuccessModalAndTrack() {
+      document.getElementById('order-success-modal').classList.add('hidden');
+      if (activeOrderId) {
+        startOrderTracking(activeOrderId);
+      }
+    }
+
     function startOrderTracking(orderId) {
       document.getElementById('live-tracker-card').classList.remove('hidden');
-
       if (trackingInterval) clearInterval(trackingInterval);
 
       syncDirectFromLocalStorage();
-      trackingInterval = setInterval(syncDirectFromLocalStorage, 800); // 0.8 saniyede bir kontrol
+      trackingInterval = setInterval(syncDirectFromLocalStorage, 800);
     }
 
     function syncDirectFromLocalStorage() {
@@ -560,7 +588,6 @@
       updateStepVisuals(status);
     }
 
-    // KESİN ADIM GÖRSEL MOTORU
     function updateStepVisuals(status) {
       const statusText = document.getElementById('tracker-status-text');
       
@@ -582,11 +609,9 @@
         const labelSpan = el.querySelector('.step-label');
 
         if (idx < activeIdx) {
-          // Tamamlanmış (Yeşil)
           iconDiv.className = "w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-xs font-black text-emerald-400";
           labelSpan.className = "text-[9px] font-bold text-emerald-400 leading-tight";
         } else if (idx === activeIdx) {
-          // Aktif Aşama
           if (normStatus === 'SERVED') {
             iconDiv.className = "w-8 h-8 rounded-full bg-indigo-500 border-2 border-indigo-400 flex items-center justify-center text-xs font-black text-white animate-bounce shadow-lg shadow-indigo-500/50";
             labelSpan.className = "text-[9px] font-black text-indigo-400 leading-tight";
@@ -598,13 +623,11 @@
             labelSpan.className = "text-[9px] font-black text-amber-400 leading-tight";
           }
         } else {
-          // Bekleyen
           iconDiv.className = "w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500";
           labelSpan.className = "text-[9px] font-bold text-slate-500 leading-tight";
         }
       });
 
-      // MASA KAPANDIĞINDA TEMİZLE
       if (normStatus === 'PAID') {
         setTimeout(() => {
           document.getElementById('live-tracker-card').classList.add('hidden');
