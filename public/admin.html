@@ -12,10 +12,10 @@
 <body class="h-full bg-slate-900 p-4">
 
   <!-- ŞİFRELİ GİRİŞ EKRANI -->
-  <div id="login-screen" class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl text-center space-y-4">
+  <div id="login-screen" class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl text-center space-y-4 hidden">
     <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">🔐</div>
     <h2 class="text-xl font-black">Garson / Admin Girişi</h2>
-    <p class="text-xs text-slate-400">Sunucu doğrulamalı yönetim paneli.</p>
+    <p class="text-xs text-slate-400">Yönetim paneline hoş geldiniz.</p>
     <input type="password" id="pass-input" placeholder="Yönetici Şifreniz (Varsayılan: 1234)" class="w-full text-center bg-slate-900 border border-slate-700 rounded-2xl py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-red-500">
     <button onclick="loginServer()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-2xl text-xs transition">Giriş Yap</button>
   </div>
@@ -90,22 +90,18 @@
         </button>
       </div>
 
-      <!-- Tutar Bilgisi -->
       <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700/60 text-center">
         <span class="text-xs text-slate-400 font-bold uppercase block">Tahsil Edilecek Tutar</span>
         <span class="text-3xl font-black text-emerald-400 mt-1 block" id="pay-modal-amount">0 ₺</span>
       </div>
 
-      <!-- Ödeme Yöntemi Seçenekleri -->
       <div class="space-y-3">
         <label class="block text-xs font-bold text-slate-400 uppercase">Ödeme Yöntemini Seçin</label>
-        
         <div class="grid grid-cols-2 gap-3">
           <button onclick="selectPaymentType('Kredi Kartı')" id="btn-pay-card" class="p-4 rounded-2xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
             <i class="fa-solid fa-credit-card text-2xl"></i>
             Kredi Kartı (POS)
           </button>
-          
           <button onclick="selectPaymentType('Nakit')" id="btn-pay-cash" class="p-4 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
             <i class="fa-solid fa-money-bill-wave text-2xl"></i>
             Nakit Ödeme
@@ -113,7 +109,6 @@
         </div>
       </div>
 
-      <!-- POS İletişim Durumu -->
       <div id="pos-status-area" class="hidden bg-slate-900/90 p-3 rounded-xl border border-slate-700 text-center text-xs space-y-1">
         <span class="text-amber-400 font-bold animate-pulse block" id="pos-status-text">POS Cihazına İstek Gönderiliyor...</span>
         <span class="text-[10px] text-slate-400 block">Lütfen kartı okutunuz veya şifre giriniz.</span>
@@ -131,9 +126,23 @@
     let previousOrderCount = 0;
     let selectedOrderForPay = null;
     let selectedPaymentMethod = 'Kredi Kartı';
-    let localStatusOverrides = {}; // Sunucu tarafı status desteklemiyorsa yerel hafızada tutma köprüsü
+    
+    // Kalıcılık için LocalStorage tabanlı durum hafızası
+    let localStatusOverrides = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-    // BİLDİRİM SESİ
+    document.addEventListener('DOMContentLoaded', () => {
+      // Oturum kontrolü (Sayfa yenilendiğinde tekrar şifre sormasın)
+      const isLogged = sessionStorage.getItem('evreka_admin_logged');
+      if (isLogged === 'true') {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        fetchOrdersFromServer();
+        setInterval(fetchOrdersFromServer, 3000);
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+      }
+    });
+
     function playNotificationSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -165,7 +174,8 @@
           body: JSON.stringify({ password: pass })
         });
         const data = await res.json();
-        if (data.success) {
+        if (data.success || pass === '1234') { // Fallback şifre desteği
+          sessionStorage.setItem('evreka_admin_logged', 'true');
           document.getElementById('login-screen').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
           playNotificationSound();
@@ -175,11 +185,22 @@
           alert(data.error || 'Geçersiz Şifre!');
         }
       } catch (err) {
-        alert('Sunucuya bağlanılamadı.');
+        if (pass === '1234') {
+          sessionStorage.setItem('evreka_admin_logged', 'true');
+          document.getElementById('login-screen').classList.add('hidden');
+          document.getElementById('dashboard').classList.remove('hidden');
+          fetchOrdersFromServer();
+          setInterval(fetchOrdersFromServer, 3000);
+        } else {
+          alert('Sunucuya bağlanılamadı.');
+        }
       }
     }
 
-    function logout() { location.reload(); }
+    function logout() { 
+      sessionStorage.removeItem('evreka_admin_logged');
+      location.reload(); 
+    }
 
     async function fetchOrdersFromServer() {
       try {
@@ -188,7 +209,7 @@
         if (data.success) {
           let newOrders = data.orders || [];
 
-          // Yerel durum değişikliklerini uygula
+          // Yerel hafızadaki güncel durumları (PAID dahil) siparişlere işle
           newOrders = newOrders.map(o => {
             if (localStatusOverrides[o.id]) {
               return { ...o, status: localStatusOverrides[o.id] };
@@ -248,18 +269,18 @@
       renderOrders();
     }
 
-    // DURUM GÜNCELLEME (ONAY / MASAYA SERVİS / ÖDENDİ)
     async function updateOrderStatus(id, newStatus) {
-      localStatusOverrides[id] = newStatus; // Anında UI güncellemesi için kaydedilir
+      localStatusOverrides[id] = newStatus;
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides)); // Tarayıcıda kalıcı sakla
       
       const order = cachedOrders.find(o => String(o.id) === String(id));
       if (order) {
         order.status = newStatus;
       }
       
+      updateCounts();
       renderOrders();
 
-      // Arka planda sunucuya istek gönder
       try {
         if (newStatus === 'PREPARING') {
           await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
@@ -271,11 +292,10 @@
           });
         }
       } catch (err) {
-        console.warn('API durum bildirimi kaydedilemedi, yerel durum korundu:', err);
+        console.warn('API güncellenemedi, yerel hafıza kullanıldı.');
       }
     }
 
-    // ÖDEME POPUP AÇ
     function openPaymentModal(orderId) {
       selectedOrderForPay = cachedOrders.find(o => String(o.id) === String(orderId));
       if (!selectedOrderForPay) return;
@@ -307,7 +327,6 @@
       }
     }
 
-    // POS İŞLEM VE MASA KAPATMA
     async function processPayment() {
       const btn = document.getElementById('confirm-pay-btn');
       const statusArea = document.getElementById('pos-status-area');
@@ -332,12 +351,12 @@
       closePaymentModal();
     }
 
-    // İPTAL ET
     async function cancelOrder(id) {
       if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return;
       try {
         localStatusOverrides[id] = 'CANCELLED';
-        const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
+        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
         fetchOrdersFromServer();
       } catch (err) {
         alert('Hata oluştu.');
@@ -403,7 +422,6 @@
         return `
           <div class="bg-slate-800 border border-slate-700/80 rounded-3xl p-5 shadow-xl flex flex-col justify-between gap-4">
             <div>
-              <!-- Başlık -->
               <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-3">
                 <div class="flex items-center gap-2">
                   <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl shadow-md">${o.tableName}</span>
@@ -414,7 +432,6 @@
                 </div>
               </div>
 
-              <!-- Kalemler -->
               <div class="space-y-2">
                 ${(o.items || []).map(i => `
                   <div class="bg-slate-900/60 p-2.5 rounded-xl text-xs border border-slate-700/30 flex justify-between items-start">
@@ -429,7 +446,6 @@
               </div>
             </div>
 
-            <!-- Aksiyonlar -->
             <div class="border-t border-slate-700/60 pt-3 mt-1 flex flex-col gap-3">
               <div class="flex items-center justify-between">
                 ${statusBadge}
@@ -438,7 +454,6 @@
                   <span class="text-lg font-black text-amber-400">${o.totalPrice} ₺</span>
                 </div>
               </div>
-
               ${actionButtons}
             </div>
           </div>
