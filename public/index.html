@@ -11,15 +11,11 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .cart-drawer {
+    .cart-drawer, .tracker-drawer {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       transform: translateY(100%);
     }
-    .cart-drawer.active { transform: translateY(0); }
-    @media (min-width: 640px) {
-      .cart-drawer { transform: translateX(100%); }
-      .cart-drawer.active { transform: translateX(0); }
-    }
+    .cart-drawer.active, .tracker-drawer.active { transform: translateY(0); }
   </style>
 </head>
 <body class="h-full text-slate-800 bg-slate-100 flex flex-col antialiased">
@@ -56,14 +52,14 @@
       </div>
 
       <!-- KİLİTLİ MASA GÖSTERGESİ -->
-      <div id="table-display-badge" onclick="alert('Masaya QR kod ile bağlandınız, masa değiştirilemez.')" class="bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 cursor-pointer shadow-inner">
+      <div id="table-display-badge" class="bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 shadow-inner">
         <i class="fa-solid fa-lock text-[10px]"></i>
         <span id="active-table-display">Masa Yükleniyor...</span>
       </div>
     </div>
   </header>
 
-  <!-- KİBAR ANA SAYFA TAKİP BARI -->
+  <!-- ANA SAYFA ÜSTÜ CANLI TAKİP BARI (Aktif sipariş varsa görünür) -->
   <div id="mini-tracker-banner" class="hidden bg-slate-900 border-b border-slate-800 px-4 py-2.5 sticky top-[57px] z-30 shadow-lg">
     <div class="max-w-xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2 text-xs">
@@ -73,9 +69,9 @@
         </span>
         <span class="text-slate-200 font-bold" id="mini-tracker-text">Aktif Siparişiniz Var</span>
       </div>
-      <a id="tracker-link" href="/takip.html" class="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
-        <i class="fa-solid fa-clock-rotate-left"></i> Siparişlerimi Takip Et ➔
-      </a>
+      <button onclick="toggleTrackerDrawer()" class="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
+        <i class="fa-solid fa-clock-rotate-left"></i> Canlı Takip Et ➔
+      </button>
     </div>
   </div>
 
@@ -124,9 +120,8 @@
     </div>
   </div>
 
-  <!-- KAYAR SEPET ÇEKMECESİ -->
+  <!-- SEPET ÇEKMECESİ -->
   <div id="drawer-overlay" onclick="closeCartDrawerExplicit()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
-
   <div id="cart-drawer" class="cart-drawer fixed bottom-0 right-0 left-0 sm:left-auto sm:top-0 sm:w-96 bg-white z-50 rounded-t-3xl sm:rounded-l-3xl sm:rounded-t-none max-h-[85vh] sm:max-h-full flex flex-col shadow-2xl">
     <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl sm:rounded-tl-3xl">
       <div>
@@ -139,9 +134,7 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-
     <div id="cart-items-container" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
-
     <div class="p-5 border-t border-slate-100 bg-slate-50/80 space-y-3">
       <div class="flex justify-between items-center text-sm">
         <span class="text-slate-500 font-bold">Toplam Tutar:</span>
@@ -153,6 +146,23 @@
     </div>
   </div>
 
+  <!-- 🚀 AYNI SAYFA İÇİNDE CANLI TAKİP ÇEKMECESİ (MODAL) -->
+  <div id="tracker-overlay" onclick="closeTrackerDrawer()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+  <div id="tracker-drawer" class="tracker-drawer fixed bottom-0 right-0 left-0 bg-slate-900 text-white z-50 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl border-t border-slate-800">
+    <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 rounded-t-3xl">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h3 class="text-lg font-black" id="tracker-drawer-title">Canlı Sipariş Takibi</h3>
+      </div>
+      <button onclick="closeTrackerDrawer()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="tracker-items-container" class="flex-1 overflow-y-auto p-5 space-y-4">
+      <!-- Canlı siparişler buraya dolacak -->
+    </div>
+  </div>
+
   <!-- SİPARİŞ BAŞARI MODALI -->
   <div id="order-success-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-5">
@@ -161,14 +171,14 @@
       </div>
       <div>
         <h3 class="text-xl font-black text-white">Siparişiniz Alındı!</h3>
-        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz mutfağımıza ve garsonumuza başarıyla iletildi.</p>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz mutfağımıza iletildi. Hemen canlı takip ekranından durumunu inceleyebilirsiniz.</p>
       </div>
       <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs flex justify-between items-center font-bold">
         <span class="text-slate-400">Atanan Masa:</span>
         <span class="text-amber-400" id="success-modal-table">Masa -</span>
       </div>
-      <button id="go-tracker-btn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
-        <i class="fa-solid fa-clock-rotate-left"></i> Siparişlerimi Takip Et ➔
+      <button onclick="closeSuccessModalAndOpenTracker()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left"></i> Canlı Takip Ekranını Aç ➔
       </button>
     </div>
   </div>
@@ -266,14 +276,10 @@
 
       document.getElementById('active-table-display').innerText = currentTable;
       document.getElementById('cart-drawer-table-display').innerHTML = `<i class="fa-solid fa-lock text-[10px]"></i> ${currentTable}`;
-      
-      const trackerUrl = `/takip.html?masa=${encodeURIComponent(currentTable)}`;
-      document.getElementById('tracker-link').href = trackerUrl;
-      document.getElementById('go-tracker-btn').onclick = () => window.location.href = trackerUrl;
 
       renderProducts('all');
       checkActiveOrdersMini();
-      setInterval(checkActiveOrdersMini, 2000);
+      setInterval(checkActiveOrdersMini, 1500);
     });
 
     function getTableOrderIds() {
@@ -315,11 +321,138 @@
           if (active.length > 0) {
             document.getElementById('mini-tracker-banner').classList.remove('hidden');
             document.getElementById('mini-tracker-text').innerText = `${active.length} Aktif Siparişiniz Var`;
+            // Eğer çekmece açıksa içeridekileri de canlı güncelle
+            if (document.getElementById('tracker-drawer').classList.contains('active')) {
+              renderTrackerContent(data.orders);
+            }
           } else {
             document.getElementById('mini-tracker-banner').classList.add('hidden');
           }
         }
       } catch (e) {}
+    }
+
+    async function toggleTrackerDrawer() {
+      const drawer = document.getElementById('tracker-drawer');
+      const overlay = document.getElementById('tracker-overlay');
+      if (drawer.classList.contains('active')) {
+        closeTrackerDrawer();
+      } else {
+        await fetchAndRenderTrackerModal();
+        drawer.classList.add('active');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    function closeTrackerDrawer() {
+      document.getElementById('tracker-drawer').classList.remove('active');
+      document.getElementById('tracker-overlay').classList.add('hidden');
+    }
+
+    async function fetchAndRenderTrackerModal() {
+      let allOrders = [];
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) allOrders = data.orders;
+      } catch (e) {}
+      renderTrackerContent(allOrders);
+    }
+
+    function renderTrackerContent(allOrders) {
+      const orderIds = getTableOrderIds();
+      const container = document.getElementById('tracker-items-container');
+
+      if (orderIds.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-slate-400 text-xs bg-slate-800/50 rounded-2xl border border-slate-800 space-y-2">
+            <i class="fa-solid fa-receipt text-2xl text-slate-600"></i>
+            <p>${currentTable} için aktif sipariş bulunmuyor.</p>
+          </div>`;
+        return;
+      }
+
+      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+      const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
+
+      if (myOrders.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Sipariş verileriniz yükleniyor...</div>';
+        return;
+      }
+
+      container.innerHTML = myOrders.map(o => {
+        const strId = String(o.id);
+        let rawStatus = String(o.status || localStatuses[strId] || 'WAITING').toUpperCase().trim();
+
+        let activeStep = 0; 
+        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+        let statusMsg = "⏳ Siparişiniz garson onayında, mutfağa iletiliyor...";
+
+        const servedVariants = ['SERVED', 'SERVICED', 'DELIVERED', 'READY', 'COMPLETED', 'DONE', 'FINISHED', 'IN_SERVICE', 'KITCHEN_DONE', 'HAZIR', 'SERVIS_EDILDI'];
+
+        if (servedVariants.includes(rawStatus)) {
+          activeStep = 2; 
+          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-extrabold animate-pulse shadow-lg shadow-indigo-500/20";
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
+        } else if (rawStatus === 'PREPARING' || rawStatus === 'MUTFAK' || rawStatus === 'PISIRIYOR') {
+          activeStep = 1;
+          statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+          statusMsg = "🔥 Siparişiniz mutfakta fırına verildi, pişim aşamasında!";
+        } else if (rawStatus === 'PAID' || rawStatus === 'ODENDI') {
+          activeStep = 3;
+          statusBg = "bg-slate-700 border-slate-600 text-slate-300";
+          statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
+        }
+
+        const itemsHtml = (o.items || []).map(i => `
+          <div class="flex justify-between items-center text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+            <div>
+              <span class="font-extrabold text-slate-200">${i.title}</span>
+              ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
+              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
+            </div>
+            <span class="font-black text-white whitespace-nowrap">${i.price} ₺</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+              <span class="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 rounded-xl">Sipariş #${o.id}</span>
+              <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
+            </div>
+            <div class="space-y-1.5">${itemsHtml}</div>
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/60 text-center">
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <span class="text-[9px] ${activeStep === 0 ? 'text-amber-400 font-bold' : 'text-slate-400'}">Onay</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 1 ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-fire"></i>
+                </div>
+                <span class="text-[9px] ${activeStep === 1 ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Mutfak</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black animate-bounce' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-utensils"></i>
+                </div>
+                <span class="text-[9px] ${activeStep >= 2 ? 'text-indigo-400 font-bold' : 'text-slate-400'}">Masada</span>
+              </div>
+            </div>
+            <div class="text-[11px] px-3 py-2 rounded-xl border font-bold ${statusBg} flex items-center justify-center text-center">
+              <span>${statusMsg}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closeSuccessModalAndOpenTracker() {
+      document.getElementById('order-success-modal').classList.add('hidden');
+      toggleTrackerDrawer();
     }
 
     function filterCategory(cat) { renderProducts(cat); }
