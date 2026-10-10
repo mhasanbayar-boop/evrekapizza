@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <!-- İSTATİSTİK BARI (Kalıcı / Sıfırlanmaz) -->
+    <!-- İSTATİSTİK BARI -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
       <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
         <span class="text-slate-400 font-bold block mb-1">Toplam Ciro</span>
@@ -128,9 +128,6 @@
     let previousOrderCount = 0;
     let selectedOrderForPay = null;
     let selectedPaymentMethod = 'Kredi Kartı';
-    
-    // Kalıcılık için yerel durumları localStorage'dan yükle
-    let localStatusOverrides = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
     function playNotificationSound() {
       try {
@@ -168,7 +165,7 @@
           document.getElementById('dashboard').classList.remove('hidden');
           playNotificationSound();
           fetchOrdersFromServer();
-          setInterval(fetchOrdersFromServer, 3000);
+          setInterval(fetchOrdersFromServer, 2000);
         } else {
           alert(data.error || 'Geçersiz Şifre!');
         }
@@ -181,20 +178,11 @@
 
     async function fetchOrdersFromServer() {
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch('/api/orders', { cache: 'no-store' });
         const data = await res.json();
         if (data.success) {
-          let newOrders = data.orders || [];
-
-          // localStorage üzerindeki durumları siparişlere işle
-          newOrders = newOrders.map(o => {
-            if (localStatusOverrides[o.id]) {
-              return { ...o, status: localStatusOverrides[o.id] };
-            }
-            return o;
-          });
-
-          const waitingOrders = newOrders.filter(o => isWaitingStatus(o.status));
+          const newOrders = data.orders || [];
+          const waitingOrders = newOrders.filter(o => o.status === 'WAITING');
           if (waitingOrders.length > previousOrderCount) {
             playNotificationSound();
           }
@@ -209,14 +197,10 @@
       }
     }
 
-    function isWaitingStatus(status) {
-      return status === 'WAITING' || status === 'WAITING_WAITER';
-    }
-
     function updateCounts() {
       document.getElementById('count-ALL').innerText = cachedOrders.filter(o => o.status !== 'CANCELLED' && o.status !== 'PAID').length;
       
-      const waiting = cachedOrders.filter(o => isWaitingStatus(o.status)).length;
+      const waiting = cachedOrders.filter(o => o.status === 'WAITING').length;
       const preparing = cachedOrders.filter(o => o.status === 'PREPARING').length;
       const served = cachedOrders.filter(o => o.status === 'SERVED').length;
       const paid = cachedOrders.filter(o => o.status === 'PAID').length;
@@ -247,31 +231,28 @@
     }
 
     async function updateOrderStatus(id, newStatus) {
-      // Durumu hem hafızaya hem de kalıcı localStorage'a kaydet
-      localStatusOverrides[id] = newStatus;
-      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
-      
-      const order = cachedOrders.find(o => String(o.id) === String(id));
-      if (order) {
-        order.status = newStatus;
-      }
-      
-      updateCounts();
-      renderOrders();
-
-      // Arka planda sunucuya da bildir
       try {
+        let endpoint = `/api/orders/${id}/status`;
+        let options = {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        };
+
         if (newStatus === 'PREPARING') {
-          await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
+          endpoint = `/api/orders/${id}/approve`;
+          options = { method: 'PATCH' };
+        }
+
+        const res = await fetch(endpoint, options);
+        const data = await res.json();
+        if (data.success) {
+          fetchOrdersFromServer();
         } else {
-          await fetch(`/api/orders/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-          });
+          alert('Durum güncellenemedi.');
         }
       } catch (err) {
-        console.warn('API durum bildirimi kaydedilemedi, yerel durum korundu:', err);
+        alert('Sunucu bağlantı hatası.');
       }
     }
 
@@ -316,12 +297,12 @@
 
       if (selectedPaymentMethod === 'Kredi Kartı') {
         statusText.innerText = "📲 POS Cihazı İle İletişim Kuruluyor...";
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 800));
         statusText.innerText = "💳 Kart Okutuldu, Onay Bekleniyor...";
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 800));
       } else {
         statusText.innerText = "💵 Nakit Tahsilat Kaydediliyor...";
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 500));
       }
 
       await updateOrderStatus(selectedOrderForPay.id, 'PAID');
@@ -333,10 +314,13 @@
     async function cancelOrder(id) {
       if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return;
       try {
-        localStatusOverrides[id] = 'CANCELLED';
-        localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
-        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
-        fetchOrdersFromServer();
+        const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          fetchOrdersFromServer();
+        } else {
+          alert('İptal edilemedi.');
+        }
       } catch (err) {
         alert('Hata oluştu.');
       }
@@ -347,7 +331,7 @@
 
       let filtered = cachedOrders;
       if (currentFilter === 'WAITING') {
-        filtered = cachedOrders.filter(o => isWaitingStatus(o.status));
+        filtered = cachedOrders.filter(o => o.status === 'WAITING');
       } else if (currentFilter !== 'ALL') {
         filtered = cachedOrders.filter(o => o.status === currentFilter);
       } else {
@@ -359,7 +343,6 @@
         return;
       }
 
-      // En yeni siparişlerin en üstte çıkması için ters çevir
       const sorted = [...filtered].reverse();
 
       container.innerHTML = sorted.map(o => {
@@ -368,7 +351,7 @@
         let statusBadge = '';
         let actionButtons = '';
 
-        if (isWaitingStatus(o.status)) {
+        if (o.status === 'WAITING') {
           statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Onay Bekliyor</span>';
           actionButtons = `
             <div class="grid grid-cols-2 gap-2">
