@@ -30,11 +30,6 @@
       <p class="text-xs text-slate-400 leading-relaxed">
         Sipariş verebilmek için lütfen masanızdaki <b class="text-amber-400">QR kodu okutarak</b> giriş yapınız.
       </p>
-      <div class="pt-2">
-        <span class="inline-block bg-slate-800 text-slate-400 text-[10px] font-mono px-3 py-1.5 rounded-xl border border-slate-700">
-          Örn: site.com/?masa=1
-        </span>
-      </div>
     </div>
   </div>
 
@@ -97,13 +92,6 @@
     </div>
 
     <div class="px-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" id="product-list"></div>
-
-    <footer class="mt-12 text-center py-6 border-t border-slate-200 text-slate-400 text-xs">
-      <p>© 2026 Evreka Pizza. Tüm hakları saklıdır.</p>
-      <a href="/admin.html" class="mt-2 inline-flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-600">
-        <i class="fa-solid fa-lock"></i> Garson / Admin Paneli
-      </a>
-    </footer>
   </main>
 
   <!-- YÜZEN SEPET BARI -->
@@ -322,6 +310,7 @@
               renderTrackerContent(data.orders);
             }
           } else {
+            // Ödendiğinde mini banner kapanır
             document.getElementById('mini-tracker-banner').classList.add('hidden');
           }
         }
@@ -373,16 +362,20 @@
 
         let statusMsg = "⏳ Siparişiniz garson onayında...";
         let statusBg = "bg-slate-900 text-slate-200 border-slate-700";
+        let activeStep = 0; // 0: Onay, 1: Mutfak, 2: Masada, 3: Ödendi/Kapandı
 
         if (rawStatus === 'PREPARING') {
+          activeStep = 1;
           statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
           statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
         } else if (rawStatus === 'SERVED' || rawStatus === 'SERVICED' || rawStatus === 'DELIVERED') {
-          statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
-          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-bold";
+          activeStep = 2;
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
+          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-bold animate-pulse";
         } else if (rawStatus === 'PAID') {
-          statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz, yine bekleriz!";
-          statusBg = "bg-emerald-600/20 border-emerald-500 text-emerald-300 font-black shadow-lg shadow-emerald-900/30";
+          activeStep = 3;
+          statusMsg = "✅ Ödemeniz Alındı. Siparişiniz ve Masanız Kapatıldı. İyi Günler Dileriz!";
+          statusBg = "bg-emerald-600/30 border-emerald-500 text-emerald-300 font-black shadow-lg shadow-emerald-900/40";
         }
 
         const itemsHtml = (o.items || []).map(i => `
@@ -402,6 +395,27 @@
               <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
             </div>
             <div class="space-y-1.5">${itemsHtml}</div>
+            
+            <!-- Görsel Adım Çubukları -->
+            <div class="grid grid-cols-4 gap-1 pt-2 border-t border-slate-700/60 text-center">
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}"><i class="fa-solid fa-hourglass-half"></i></div>
+                <span class="text-[8px] text-slate-400">Onay</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] ${activeStep >= 1 ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}"><i class="fa-solid fa-fire"></i></div>
+                <span class="text-[8px] text-slate-400">Mutfak</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black' : 'bg-slate-700 text-slate-500'}"><i class="fa-solid fa-utensils"></i></div>
+                <span class="text-[8px] text-slate-400">Masada</span>
+              </div>
+              <div class="flex flex-col items-center gap-0.5">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] ${activeStep >= 3 ? 'bg-emerald-600 text-white font-black' : 'bg-slate-700 text-slate-500'}"><i class="fa-solid fa-check"></i></div>
+                <span class="text-[8px] text-slate-400">Kapandı</span>
+              </div>
+            </div>
+
             <div class="text-[11px] px-3 py-2.5 rounded-xl border text-center ${statusBg}">
               <span>${statusMsg}</span>
             </div>
