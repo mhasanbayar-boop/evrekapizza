@@ -219,13 +219,12 @@
   </div>
 
   <script>
-    // Zenginleştirilmiş Geniş Menü Katalogu
     const catalog = [
       {
         id: 'piz-01', category: 'pizza', title: 'Evreka Special Pizza', description: 'Özel mozarella peyniri, dana sucuk, mantar, mısır, zeytin.', basePrice: 280,
         image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
         sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük', priceOffset: 120 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }, { id: 'ex-mush', name: 'Ekstra Mantar', price: 25 }]
+        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
       {
         id: 'piz-02', category: 'pizza', title: 'Pepperoni Lover Pizza', description: 'Bol İtalyan dilimli pepperoni sucuk ve ekstra mozarella.', basePrice: 295,
@@ -234,40 +233,13 @@
         extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
       {
-        id: 'piz-03', category: 'pizza', title: 'Margarita Classic', description: 'Özel domates sosu, taze fesleğen yaprakları ve bol mozarella.', basePrice: 240,
-        image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 50 }, { id: 'sz-l', name: 'Büyük', priceOffset: 100 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
-      },
-      {
-        id: 'piz-04', category: 'pizza', title: 'Barbekü Tavuklu Pizza', description: 'Barbekü soslu izgara tavuk parçaları, mantar ve kırmızı soğan.', basePrice: 275,
-        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük', priceOffset: 120 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
-      },
-      {
         id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85,
         image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80',
         sizes: [], extras: []
       },
       {
-        id: 'sd-02', category: 'side', title: 'Sarımsaklı Ekmek & Peynir', description: 'Fırınlanmış çıtır ekmek dilimleri ve eritilmiş peynir.', basePrice: 95,
-        image: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=800&q=80',
-        sizes: [], extras: []
-      },
-      {
         id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45,
         image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80',
-        sizes: [], extras: []
-      },
-      {
-        id: 'bev-02', category: 'beverage', title: 'Ayran (300ml)', description: 'Geleneksel yayık ayranı.', basePrice: 35,
-        image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=800&q=80',
-        sizes: [], extras: []
-      },
-      {
-        id: 'bev-03', category: 'beverage', title: 'Limonata (Ev Yapımı)', description: 'Taze nane yaprakları ile taze sıkım.', basePrice: 55,
-        image: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=800&q=80',
         sizes: [], extras: []
       },
       {
@@ -400,9 +372,18 @@
         let rawStatus = String(localStatuses[strId] || o.status || 'WAITING').toUpperCase().trim();
 
         let statusMsg = "⏳ Siparişiniz garson onayında...";
-        if (rawStatus === 'SERVED') statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
-        else if (rawStatus === 'PREPARING') statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
-        else if (rawStatus === 'PAID') statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
+        let statusBg = "bg-slate-900 text-slate-200 border-slate-700";
+
+        if (rawStatus === 'PREPARING') {
+          statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
+          statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+        } else if (rawStatus === 'SERVED') {
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
+          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-bold";
+        } else if (rawStatus === 'PAID') {
+          statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz, yine bekleriz!";
+          statusBg = "bg-emerald-600/20 border-emerald-500 text-emerald-300 font-black shadow-lg shadow-emerald-900/30";
+        }
 
         const itemsHtml = (o.items || []).map(i => `
           <div class="flex justify-between items-center text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
@@ -421,7 +402,7 @@
               <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
             </div>
             <div class="space-y-1.5">${itemsHtml}</div>
-            <div class="text-[11px] px-3 py-2 rounded-xl border font-bold bg-slate-900 text-slate-200 text-center">
+            <div class="text-[11px] px-3 py-2.5 rounded-xl border text-center ${statusBg}">
               <span>${statusMsg}</span>
             </div>
           </div>
@@ -434,15 +415,11 @@
       toggleTrackerDrawer();
     }
 
-    // Kategori Seçim ve Aktif Buton Görünüm Yönetimi
     function filterCategory(cat, btnElement) {
-      // Tüm butonların stillerini sıfırla (Beyaz arkaplan)
       document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.className = "cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition";
       });
-      // Tıklanan butona siyah/koyu arka planı ver
       btnElement.className = "cat-btn px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap transition";
-      
       renderProducts(cat);
     }
 
