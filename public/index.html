@@ -45,55 +45,22 @@
     </div>
   </header>
 
-  <!-- CANLI ADIMLI SİPARİŞ TAKİP BARI -->
-  <div id="live-tracker-card" class="hidden bg-slate-900 text-white border-b border-slate-800 p-4 sticky top-[57px] z-30 shadow-2xl">
+  <!-- CANLI ADIMLI SİPARİŞ TAKİP BARI (ÇOKLU KİBAR KART DESTEKLİ) -->
+  <div id="live-tracker-card" class="hidden bg-slate-900 text-white border-b border-slate-800 p-3 sticky top-[57px] z-30 shadow-2xl">
     <div class="max-w-xl mx-auto space-y-3">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
           <span class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <span class="font-extrabold text-xs text-slate-200" id="tracker-table-title">Masa Siparişiniz</span>
+          <span class="font-extrabold text-xs text-slate-200" id="tracker-table-title">Masa Siparişleriniz</span>
         </div>
-        <span class="text-[10px] font-mono bg-slate-800 text-amber-400 px-2 py-0.5 rounded-lg border border-slate-700 font-bold" id="tracker-order-id">#0000</span>
+        <span class="text-[10px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded-lg border border-slate-700 font-bold" id="tracker-order-count">0 Aktif Sipariş</span>
       </div>
 
-      <!-- 4 AŞAMALI TIMELINE PROGRESS BAR -->
-      <div class="grid grid-cols-4 gap-1 relative py-2">
-        <div class="flex flex-col items-center text-center space-y-1" id="step-WAITING">
-          <div class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
-            <i class="fa-solid fa-hourglass-half"></i>
-          </div>
-          <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Garson Onayı</span>
-        </div>
-
-        <div class="flex flex-col items-center text-center space-y-1" id="step-PREPARING">
-          <div class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
-            <i class="fa-solid fa-fire"></i>
-          </div>
-          <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Hazırlanıyor</span>
-        </div>
-
-        <div class="flex flex-col items-center text-center space-y-1" id="step-SERVED">
-          <div class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
-            <i class="fa-solid fa-utensils"></i>
-          </div>
-          <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Masada</span>
-        </div>
-
-        <div class="flex flex-col items-center text-center space-y-1" id="step-PAID">
-          <div class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
-            <i class="fa-solid fa-check"></i>
-          </div>
-          <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Ödendi</span>
-        </div>
-      </div>
-
-      <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60 flex items-center justify-between text-xs">
-        <span class="text-slate-300 font-semibold" id="tracker-status-text">Siparişiniz garsona iletildi...</span>
-        <span class="font-black text-amber-400" id="tracker-order-price">0 ₺</span>
-      </div>
+      <!-- ÇOKLU SİPARİŞ LİSTESİ ALANI -->
+      <div id="tracker-orders-list" class="space-y-2 max-h-60 overflow-y-auto no-scrollbar"></div>
     </div>
   </div>
 
@@ -170,7 +137,7 @@
     </div>
   </div>
 
-  <!-- SEPET BOŞ / BİLGİ UYARI MODALI -->
+  <!-- BİLGİ UYARI MODALI -->
   <div id="info-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4">
       <div class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
@@ -194,7 +161,7 @@
       </div>
       <div>
         <h3 class="text-xl font-black text-white">Siparişiniz Alındı!</h3>
-        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz mutfağımıza ve garsonumuza başarıyla iletildi. Yukarıdaki canlı panelden adımları takip edebilirsiniz.</p>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz mutfağımıza ve garsonumuza başarıyla iletildi. Canlı takip panelinden kontrol edebilirsiniz.</p>
       </div>
       <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs flex justify-between items-center font-bold">
         <span class="text-slate-400">Atanan Masa:</span>
@@ -302,30 +269,35 @@
         document.getElementById('active-table-display').innerText = currentTable;
         document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
         closeTableModal();
-        checkAndStartCurrentTableTracking();
+        startTrackingLoop();
       } else {
         openTableModal();
       }
 
-      window.addEventListener('storage', (e) => {
-        if (currentTable && (e.key === 'evreka_order_statuses' || e.key === `evreka_active_order_${currentTable}`)) {
-          syncDirectFromLocalStorage();
-        }
+      window.addEventListener('storage', () => {
+        if (currentTable) syncOrdersForCurrentTable();
       });
     });
 
-    function getTableActiveOrderId() {
-      if (!currentTable) return null;
-      return localStorage.getItem(`evreka_active_order_${currentTable}`);
+    function getTableOrderIds() {
+      if (!currentTable) return [];
+      const list = localStorage.getItem(`evreka_orders_${currentTable}`);
+      return list ? JSON.parse(list) : [];
     }
 
-    function checkAndStartCurrentTableTracking() {
-      const activeId = getTableActiveOrderId();
-      if (activeId) {
-        startOrderTracking(activeId);
-      } else {
-        document.getElementById('live-tracker-card').classList.add('hidden');
+    function addOrderToTable(orderId) {
+      if (!currentTable) return;
+      let ids = getTableOrderIds();
+      if (!ids.includes(orderId)) {
+        ids.push(orderId);
+        localStorage.setItem(`evreka_orders_${currentTable}`, JSON.stringify(ids));
       }
+    }
+
+    function startTrackingLoop() {
+      syncOrdersForCurrentTable();
+      if (trackingInterval) clearInterval(trackingInterval);
+      trackingInterval = setInterval(syncOrdersForCurrentTable, 1200);
     }
 
     function showInfoModal(title, desc) {
@@ -371,7 +343,7 @@
       document.getElementById('active-table-display').innerText = currentTable;
       document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
       closeTableModal();
-      checkAndStartCurrentTableTracking();
+      startTrackingLoop();
     }
 
     function openTableModal() { document.getElementById('table-modal').classList.remove('hidden'); }
@@ -557,10 +529,7 @@
 
     async function submitOrderToAPI() {
       if (!currentTable) return openTableModal();
-      if (cart.length === 0) {
-        showInfoModal("Sepetiniz Henüz Boş", "Sipariş verebilmek için menüden seçim yapmalısınız.");
-        return;
-      }
+      if (cart.length === 0) return showInfoModal("Sepetiniz Henüz Boş", "Sipariş verebilmek için menüden seçim yapmalısınız.");
 
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
@@ -581,16 +550,14 @@
 
         const data = await response.json();
         if (data.success) {
-          const activeOrderId = data.order.id;
+          const activeOrderId = String(data.order.id);
           
-          // SADECE MEVCUT MASAYA Özel Kilitli Kaydet
-          localStorage.setItem(`evreka_active_order_${currentTable}`, activeOrderId);
+          addOrderToTable(activeOrderId);
           
           let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
           localStatuses[activeOrderId] = 'WAITING';
           localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
 
-          // DÖNGÜYÜ KIRAN KRİTİK ADIM: Önce Çekmeceyi Kapat Sonra Sepeti Boşalt
           closeCartDrawerExplicit();
           cart = [];
           updateCartBar();
@@ -610,91 +577,104 @@
 
     function closeSuccessModalAndTrack() {
       document.getElementById('order-success-modal').classList.add('hidden');
-      checkAndStartCurrentTableTracking();
+      startTrackingLoop();
     }
 
-    function startOrderTracking(orderId) {
-      document.getElementById('live-tracker-card').classList.remove('hidden');
-      if (trackingInterval) clearInterval(trackingInterval);
+    // ⚡ ÇOKLU SİPARİŞİ KİBAR VE KOMPAKT YÖNETEN CANLI EKRAN SENKRONU
+    async function syncOrdersForCurrentTable() {
+      if (!currentTable) return;
+      const orderIds = getTableOrderIds();
 
-      syncDirectFromLocalStorage();
-      trackingInterval = setInterval(syncDirectFromLocalStorage, 800);
-    }
-
-    function syncDirectFromLocalStorage() {
-      const activeOrderId = getTableActiveOrderId();
-      if (!activeOrderId || !currentTable) {
+      if (orderIds.length === 0) {
         document.getElementById('live-tracker-card').classList.add('hidden');
-        if (trackingInterval) clearInterval(trackingInterval);
         return;
       }
 
-      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-      const localOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
-
-      let status = localStatuses[activeOrderId] || 'WAITING';
-      let orderObj = localOrders.find(o => String(o.id) === String(activeOrderId));
-
-      document.getElementById('tracker-table-title').innerText = `${currentTable} - Canlı Sipariş Takibi`;
-      document.getElementById('tracker-order-id').innerText = `#${activeOrderId}`;
-      document.getElementById('tracker-order-price').innerText = `${(orderObj && orderObj.totalPrice) || 0} ₺`;
-
-      updateStepVisuals(status, activeOrderId);
-    }
-
-    // ⚡ CANLI ADIM İLERLEME MOTORU (KESİN YENİLENDİ)
-    function updateStepVisuals(status, activeOrderId) {
-      const statusText = document.getElementById('tracker-status-text');
-      
-      let normStatus = String(status).toUpperCase();
-      if (normStatus === 'WAITING_WAITER') normStatus = 'WAITING';
-
-      const stepOrder = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
-      const activeIdx = stepOrder.indexOf(normStatus);
-
-      if (normStatus === 'WAITING') statusText.innerText = "⏳ Siparişiniz garson onayına sunuldu...";
-      else if (normStatus === 'PREPARING') statusText.innerText = "🔥 Siparişiniz mutfakta fırına verildi, hazırlanıyor!";
-      else if (normStatus === 'SERVED') statusText.innerText = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
-      else if (normStatus === 'PAID') statusText.innerText = "✅ Ödemeniz alındı, masanız kapatılıyor. Teşekkürler!";
-
-      stepOrder.forEach((stepName, idx) => {
-        const el = document.getElementById(`step-${stepName}`);
-        if (!el) return;
-        const iconDiv = el.querySelector('.step-icon');
-        const labelSpan = el.querySelector('.step-label');
-
-        if (idx < activeIdx) {
-          // Tamamlanmış Aşama (Yeşil)
-          iconDiv.className = "w-9 h-9 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-xs font-black text-emerald-400 shadow-md";
-          labelSpan.className = "text-[9px] font-extrabold text-emerald-400 leading-tight";
-        } else if (idx === activeIdx) {
-          // Aktif Aşama
-          if (normStatus === 'SERVED') {
-            iconDiv.className = "w-9 h-9 rounded-full bg-indigo-500 border-2 border-indigo-400 flex items-center justify-center text-xs font-black text-white animate-bounce shadow-lg shadow-indigo-500/50";
-            labelSpan.className = "text-[9px] font-black text-indigo-400 leading-tight";
-          } else if (normStatus === 'PAID') {
-            iconDiv.className = "w-9 h-9 rounded-full bg-emerald-500 border-2 border-emerald-300 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-emerald-500/50";
-            labelSpan.className = "text-[9px] font-black text-emerald-300 leading-tight";
-          } else {
-            iconDiv.className = "w-9 h-9 rounded-full bg-amber-500 border-2 border-amber-300 flex items-center justify-center text-xs font-black text-slate-950 animate-pulse shadow-lg shadow-amber-500/50";
-            labelSpan.className = "text-[9px] font-black text-amber-400 leading-tight";
-          }
-        } else {
-          // Henüz Gelinmemiş Aşama (Gri)
-          iconDiv.className = "w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-500";
-          labelSpan.className = "text-[9px] font-bold text-slate-500 leading-tight";
+      let allOrders = [];
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) {
+          allOrders = data.orders;
         }
+      } catch (e) {}
+
+      if (allOrders.length === 0) {
+        allOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
+      }
+
+      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+
+      // Masaya ait aktif siparişleri filtrele
+      const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
+      const activeOrders = myOrders.filter(o => {
+        const currentStatus = localStatuses[o.id] || o.status || 'WAITING';
+        return currentStatus !== 'PAID' && currentStatus !== 'CANCELLED';
       });
 
-      if (normStatus === 'PAID') {
-        setTimeout(() => {
-          document.getElementById('live-tracker-card').classList.add('hidden');
-          if (currentTable) {
-            localStorage.removeItem(`evreka_active_order_${currentTable}`);
-          }
-          if (trackingInterval) clearInterval(trackingInterval);
-        }, 4000);
+      if (activeOrders.length === 0) {
+        document.getElementById('live-tracker-card').classList.add('hidden');
+        return;
       }
+
+      document.getElementById('live-tracker-card').classList.remove('hidden');
+      document.getElementById('tracker-table-title').innerText = `${currentTable} - Sipariş Takibi`;
+      document.getElementById('tracker-order-count').innerText = `${activeOrders.length} Aktif Sipariş`;
+
+      const listContainer = document.getElementById('tracker-orders-list');
+      
+      listContainer.innerHTML = activeOrders.map(o => {
+        let status = localStatuses[o.id] || o.status || 'WAITING';
+        let normStatus = String(status).toUpperCase();
+        if (normStatus === 'WAITING_WAITER') normStatus = 'WAITING';
+
+        const stepOrder = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
+        const activeIdx = Math.max(0, stepOrder.indexOf(normStatus));
+
+        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+        let statusMsg = "⏳ Garson onayında...";
+        
+        if (normStatus === 'PREPARING') {
+          statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+          statusMsg = "🔥 Mutfakta hazırlanıyor!";
+        } else if (normStatus === 'SERVED') {
+          statusBg = "bg-indigo-500/10 border-indigo-500/30 text-indigo-400";
+          statusMsg = "🍽️ Masanıza servis edildi.";
+        }
+
+        const itemsSummary = (o.items || []).map(i => `${i.title}`).join(', ');
+
+        return `
+          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-2.5 space-y-2 shadow-md">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-amber-400 font-mono">#${o.id}</span>
+              <span class="text-slate-300 font-black">${o.totalPrice} ₺</span>
+            </div>
+            
+            <p class="text-[10px] text-slate-400 truncate">${itemsSummary}</p>
+
+            <!-- KOMPAKT KİBAR 3 ADIMLI İLERLEME BAR -->
+            <div class="grid grid-cols-3 gap-1 pt-1 border-t border-slate-700/40">
+              <div class="flex items-center gap-1">
+                <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] ${activeIdx >= 0 ? 'bg-amber-500 text-black font-black' : 'bg-slate-700 text-slate-500'}">1</div>
+                <span class="text-[9px] ${activeIdx === 0 ? 'text-amber-400 font-extrabold' : 'text-slate-500'}">Onay</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] ${activeIdx >= 1 ? 'bg-emerald-500 text-black font-black' : 'bg-slate-700 text-slate-500'}">2</div>
+                <span class="text-[9px] ${activeIdx === 1 ? 'text-emerald-400 font-extrabold' : 'text-slate-500'}">Mutfak</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] ${activeIdx >= 2 ? 'bg-indigo-500 text-white font-black' : 'bg-slate-700 text-slate-500'}">3</div>
+                <span class="text-[9px] ${activeIdx === 2 ? 'text-indigo-400 font-extrabold' : 'text-slate-500'}">Masada</span>
+              </div>
+            </div>
+
+            <div class="text-[10px] px-2 py-1 rounded-lg border font-semibold ${statusBg} flex justify-between items-center">
+              <span>${statusMsg}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
   </script>
 </body>
