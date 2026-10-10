@@ -11,7 +11,6 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
     .cart-drawer {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       transform: translateY(100%);
@@ -46,7 +45,7 @@
     </div>
   </header>
 
-  <!-- HIZLI CANLI ADIMLI TAKİP BARI -->
+  <!-- ANLIK CANLI ADIMLI TAKİP BARI -->
   <div id="live-tracker-card" class="hidden bg-slate-900 text-white border-b border-slate-800 p-4 sticky top-[57px] z-30 shadow-2xl">
     <div class="max-w-xl mx-auto space-y-3">
       <div class="flex items-center justify-between">
@@ -278,10 +277,10 @@
         startOrderTracking(activeOrderId);
       }
 
-      // Aynı bilgisayarda/sekmede garson tıklayınca sıfır gecikmeyle anında yakala
+      // Garson panelinin hafızayı güncellemesini anında dinle (Storage Event)
       window.addEventListener('storage', (e) => {
         if (e.key === 'evreka_order_statuses' && activeOrderId) {
-          checkOrderStatusImmediately();
+          syncDirectFromLocalStorage();
         }
       });
     });
@@ -514,6 +513,12 @@
         if (data.success) {
           activeOrderId = data.order.id;
           localStorage.setItem('evreka_active_order_id', activeOrderId);
+          
+          // Yerel depoya varsayılan WAITING olarak kaydet
+          let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+          localStatuses[activeOrderId] = 'WAITING';
+          localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
+
           cart = [];
           updateCartBar();
           toggleCartDrawer();
@@ -529,57 +534,36 @@
       }
     }
 
-    // ⚡ IŞIK HIZINDA (1 SANİYE) CANLI TAKİP MOTORU
+    // ⚡ KESİN ÇÖZÜM: DOĞRUDAN YEREL HAFIZA HİBRİT TAKİP MOTORU
     function startOrderTracking(orderId) {
       document.getElementById('live-tracker-card').classList.remove('hidden');
 
       if (trackingInterval) clearInterval(trackingInterval);
 
-      checkOrderStatusImmediately(); // İlk açılışta anında kontrol et
-      trackingInterval = setInterval(checkOrderStatusImmediately, 1000); // 1 Saniyede bir senkronize et
+      syncDirectFromLocalStorage();
+      trackingInterval = setInterval(syncDirectFromLocalStorage, 800); // 0.8 saniyede bir kontrol
     }
 
-    async function checkOrderStatusImmediately() {
+    function syncDirectFromLocalStorage() {
       if (!activeOrderId) return;
 
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       const localOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
 
-      let currentStatus = localStatuses[activeOrderId] || null;
+      let status = localStatuses[activeOrderId] || 'WAITING';
       let orderObj = localOrders.find(o => String(o.id) === String(activeOrderId));
 
-      try {
-        const res = await fetch('/api/orders');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.orders)) {
-          const apiOrder = data.orders.find(o => String(o.id) === String(activeOrderId));
-          if (apiOrder) {
-            orderObj = apiOrder;
-            if (!currentStatus) currentStatus = apiOrder.status;
-          }
-        }
-      } catch (e) {
-        // Sunucu gecikirse yerel veriden devam et
-      }
+      document.getElementById('tracker-table-title').innerText = `${(orderObj && orderObj.tableName) || currentTable} - Canlı Sipariş Takibi`;
+      document.getElementById('tracker-order-id').innerText = `#${activeOrderId}`;
+      document.getElementById('tracker-order-price').innerText = `${(orderObj && orderObj.totalPrice) || 0} ₺`;
 
-      if (!currentStatus && orderObj) {
-        currentStatus = orderObj.status;
-      }
-
-      if (currentStatus) {
-        document.getElementById('tracker-table-title').innerText = `${(orderObj && orderObj.tableName) || currentTable} - Canlı Sipariş Takibi`;
-        document.getElementById('tracker-order-id').innerText = `#${activeOrderId}`;
-        document.getElementById('tracker-order-price').innerText = `${(orderObj && orderObj.totalPrice) || 0} ₺`;
-
-        updateStepVisuals(currentStatus);
-      }
+      updateStepVisuals(status);
     }
 
-    // HIZLI VE KESİN ADIM GÖRSEL MOTORU
+    // KESİN ADIM GÖRSEL MOTORU
     function updateStepVisuals(status) {
       const statusText = document.getElementById('tracker-status-text');
       
-      // Standartlaştırma
       let normStatus = String(status).toUpperCase();
       if (normStatus === 'WAITING_WAITER') normStatus = 'WAITING';
 
@@ -598,7 +582,7 @@
         const labelSpan = el.querySelector('.step-label');
 
         if (idx < activeIdx) {
-          // Tamamlanmış Aşamalar (Yeşil Tik)
+          // Tamamlanmış (Yeşil)
           iconDiv.className = "w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-xs font-black text-emerald-400";
           labelSpan.className = "text-[9px] font-bold text-emerald-400 leading-tight";
         } else if (idx === activeIdx) {
@@ -614,13 +598,13 @@
             labelSpan.className = "text-[9px] font-black text-amber-400 leading-tight";
           }
         } else {
-          // Henüz Gelinmemiş Aşamalar
+          // Bekleyen
           iconDiv.className = "w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500";
           labelSpan.className = "text-[9px] font-bold text-slate-500 leading-tight";
         }
       });
 
-      // ÖDEME ALINDIĞINDA (PAID) MASA KAPATILIR VE KART SIFIRLANIR
+      // MASA KAPANDIĞINDA TEMİZLE
       if (normStatus === 'PAID') {
         setTimeout(() => {
           document.getElementById('live-tracker-card').classList.add('hidden');
