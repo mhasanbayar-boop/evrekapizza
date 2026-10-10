@@ -292,14 +292,13 @@
       }
 
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch('/api/orders', { cache: 'no-store' });
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) {
-          const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
           const active = data.orders.filter(o => {
             const strId = String(o.id);
             if (!orderIds.includes(strId)) return false;
-            const st = (localStatuses[strId] || o.status || 'WAITING').toUpperCase();
+            const st = String(o.status || 'WAITING').toUpperCase();
             return st !== 'PAID' && st !== 'CANCELLED';
           });
 
@@ -310,7 +309,6 @@
               renderTrackerContent(data.orders);
             }
           } else {
-            // Ödendiğinde mini banner kapanır
             document.getElementById('mini-tracker-banner').classList.add('hidden');
           }
         }
@@ -337,7 +335,7 @@
     async function fetchAndRenderTrackerModal() {
       let allOrders = [];
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch('/api/orders', { cache: 'no-store' });
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) allOrders = data.orders;
       } catch (e) {}
@@ -353,16 +351,14 @@
         return;
       }
 
-      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
 
       container.innerHTML = myOrders.map(o => {
-        const strId = String(o.id);
-        let rawStatus = String(localStatuses[strId] || o.status || 'WAITING').toUpperCase().trim();
+        let rawStatus = String(o.status || 'WAITING').toUpperCase().trim();
 
         let statusMsg = "⏳ Siparişiniz garson onayında...";
         let statusBg = "bg-slate-900 text-slate-200 border-slate-700";
-        let activeStep = 0; // 0: Onay, 1: Mutfak, 2: Masada, 3: Ödendi/Kapandı
+        let activeStep = 0; 
 
         if (rawStatus === 'PREPARING') {
           activeStep = 1;
@@ -396,7 +392,6 @@
             </div>
             <div class="space-y-1.5">${itemsHtml}</div>
             
-            <!-- Görsel Adım Çubukları -->
             <div class="grid grid-cols-4 gap-1 pt-2 border-t border-slate-700/60 text-center">
               <div class="flex flex-col items-center gap-0.5">
                 <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}"><i class="fa-solid fa-hourglass-half"></i></div>
