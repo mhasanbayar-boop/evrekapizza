@@ -16,9 +16,7 @@
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       transform: translateY(100%);
     }
-    .cart-drawer.active {
-      transform: translateY(0);
-    }
+    .cart-drawer.active { transform: translateY(0); }
     @media (min-width: 640px) {
       .cart-drawer { transform: translateX(100%); }
       .cart-drawer.active { transform: translateX(0); }
@@ -48,7 +46,7 @@
     </div>
   </header>
 
-  <!-- PROFESYONEL ADIMLI CANLI SİPARİŞ TAKİP KARTI (Masa Kapanana Kadar Ekranda Kalır) -->
+  <!-- HIZLI CANLI ADIMLI TAKİP BARI -->
   <div id="live-tracker-card" class="hidden bg-slate-900 text-white border-b border-slate-800 p-4 sticky top-[57px] z-30 shadow-2xl">
     <div class="max-w-xl mx-auto space-y-3">
       <div class="flex items-center justify-between">
@@ -64,7 +62,6 @@
 
       <!-- 4 AŞAMALI TIMELINE PROGRESS BAR -->
       <div class="grid grid-cols-4 gap-1 relative py-2">
-        <!-- Aşama 1: Onay -->
         <div class="flex flex-col items-center text-center space-y-1" id="step-WAITING">
           <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
             <i class="fa-solid fa-hourglass-half"></i>
@@ -72,7 +69,6 @@
           <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Garson Onayı</span>
         </div>
 
-        <!-- Aşama 2: Mutfak -->
         <div class="flex flex-col items-center text-center space-y-1" id="step-PREPARING">
           <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
             <i class="fa-solid fa-fire"></i>
@@ -80,7 +76,6 @@
           <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Hazırlanıyor</span>
         </div>
 
-        <!-- Aşama 3: Servis Edildi -->
         <div class="flex flex-col items-center text-center space-y-1" id="step-SERVED">
           <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
             <i class="fa-solid fa-utensils"></i>
@@ -88,7 +83,6 @@
           <span class="text-[9px] font-bold text-slate-400 leading-tight step-label">Masada</span>
         </div>
 
-        <!-- Aşama 4: Ödendi -->
         <div class="flex flex-col items-center text-center space-y-1" id="step-PAID">
           <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
             <i class="fa-solid fa-check"></i>
@@ -104,7 +98,7 @@
     </div>
   </div>
 
-  <!-- MÜŞTERİ MENÜ ALANI -->
+  <!-- MENÜ ALANI -->
   <main class="flex-1 max-w-xl w-full mx-auto pb-28">
     <div class="p-4">
       <div class="bg-gradient-to-r from-red-600 via-amber-600 to-orange-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
@@ -283,6 +277,13 @@
       if (activeOrderId) {
         startOrderTracking(activeOrderId);
       }
+
+      // Aynı bilgisayarda/sekmede garson tıklayınca sıfır gecikmeyle anında yakala
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'evreka_order_statuses' && activeOrderId) {
+          checkOrderStatusImmediately();
+        }
+      });
     });
 
     function renderTableButtons() {
@@ -528,78 +529,84 @@
       }
     }
 
-    // 4 ADIMLI CANLI TAKİP MANTIĞI (Masa Kapanana Kadar Ekranda Kalır)
+    // ⚡ IŞIK HIZINDA (1 SANİYE) CANLI TAKİP MOTORU
     function startOrderTracking(orderId) {
-      const trackerCard = document.getElementById('live-tracker-card');
-      trackerCard.classList.remove('hidden');
+      document.getElementById('live-tracker-card').classList.remove('hidden');
 
       if (trackingInterval) clearInterval(trackingInterval);
 
-      trackingInterval = setInterval(async () => {
-        try {
-          const res = await fetch('/api/orders');
-          const data = await res.json();
-          
-          const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-          const localOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
-
-          let myOrder = null;
-          if (data.success && Array.isArray(data.orders)) {
-            myOrder = data.orders.find(o => String(o.id) === String(orderId));
-          }
-
-          if (!myOrder) {
-            myOrder = localOrders.find(o => String(o.id) === String(orderId));
-          }
-
-          if (myOrder && localStatuses[orderId]) {
-            myOrder.status = localStatuses[orderId];
-          }
-
-          if (myOrder) {
-            document.getElementById('tracker-table-title').innerText = `${myOrder.tableName || currentTable} - Canlı Sipariş Takibi`;
-            document.getElementById('tracker-order-id').innerText = `#${myOrder.id}`;
-            document.getElementById('tracker-order-price').innerText = `${myOrder.totalPrice || 0} ₺`;
-
-            updateStepVisuals(myOrder.status);
-          }
-        } catch (e) {
-          console.error('Takip senkronizasyon hatası:', e);
-        }
-      }, 2500);
+      checkOrderStatusImmediately(); // İlk açılışta anında kontrol et
+      trackingInterval = setInterval(checkOrderStatusImmediately, 1000); // 1 Saniyede bir senkronize et
     }
 
-    // ADIMLARI RENKLENDİREN GÖRSEL MOTOR
+    async function checkOrderStatusImmediately() {
+      if (!activeOrderId) return;
+
+      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+      const localOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
+
+      let currentStatus = localStatuses[activeOrderId] || null;
+      let orderObj = localOrders.find(o => String(o.id) === String(activeOrderId));
+
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) {
+          const apiOrder = data.orders.find(o => String(o.id) === String(activeOrderId));
+          if (apiOrder) {
+            orderObj = apiOrder;
+            if (!currentStatus) currentStatus = apiOrder.status;
+          }
+        }
+      } catch (e) {
+        // Sunucu gecikirse yerel veriden devam et
+      }
+
+      if (!currentStatus && orderObj) {
+        currentStatus = orderObj.status;
+      }
+
+      if (currentStatus) {
+        document.getElementById('tracker-table-title').innerText = `${(orderObj && orderObj.tableName) || currentTable} - Canlı Sipariş Takibi`;
+        document.getElementById('tracker-order-id').innerText = `#${activeOrderId}`;
+        document.getElementById('tracker-order-price').innerText = `${(orderObj && orderObj.totalPrice) || 0} ₺`;
+
+        updateStepVisuals(currentStatus);
+      }
+    }
+
+    // HIZLI VE KESİN ADIM GÖRSEL MOTORU
     function updateStepVisuals(status) {
-      const steps = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
       const statusText = document.getElementById('tracker-status-text');
+      
+      // Standartlaştırma
+      let normStatus = String(status).toUpperCase();
+      if (normStatus === 'WAITING_WAITER') normStatus = 'WAITING';
 
-      let activeIndex = 0;
-      if (status === 'PREPARING') activeIndex = 1;
-      else if (status === 'SERVED') activeIndex = 2;
-      else if (status === 'PAID') activeIndex = 3;
+      const stepOrder = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
+      const activeIdx = stepOrder.indexOf(normStatus);
 
-      if (status === 'WAITING' || status === 'WAITING_WAITER') statusText.innerText = "⏳ Siparişiniz garson onayına sunuldu...";
-      else if (status === 'PREPARING') statusText.innerText = "🔥 Siparişiniz mutfakta fırına verildi, hazırlanıyor!";
-      else if (status === 'SERVED') statusText.innerText = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
-      else if (status === 'PAID') statusText.innerText = "✅ Ödemeniz alındı, masanız kapatılıyor. Teşekkürler!";
+      if (normStatus === 'WAITING') statusText.innerText = "⏳ Siparişiniz garson onayına sunuldu...";
+      else if (normStatus === 'PREPARING') statusText.innerText = "🔥 Siparişiniz mutfakta fırına verildi, hazırlanıyor!";
+      else if (normStatus === 'SERVED') statusText.innerText = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
+      else if (normStatus === 'PAID') statusText.innerText = "✅ Ödemeniz alındı, masanız kapatılıyor. Teşekkürler!";
 
-      steps.forEach((s, idx) => {
-        const el = document.getElementById(`step-${s}`);
+      stepOrder.forEach((stepName, idx) => {
+        const el = document.getElementById(`step-${stepName}`);
         if (!el) return;
         const iconDiv = el.querySelector('.step-icon');
         const labelSpan = el.querySelector('.step-label');
 
-        if (idx < activeIndex) {
-          // Geçilmiş Adımlar (Yeşil)
+        if (idx < activeIdx) {
+          // Tamamlanmış Aşamalar (Yeşil Tik)
           iconDiv.className = "w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-xs font-black text-emerald-400";
           labelSpan.className = "text-[9px] font-bold text-emerald-400 leading-tight";
-        } else if (idx === activeIndex) {
-          // Şu Anki Aktif Adım (Yanıp Sönen Amber / Mor)
-          if (status === 'SERVED') {
+        } else if (idx === activeIdx) {
+          // Aktif Aşama
+          if (normStatus === 'SERVED') {
             iconDiv.className = "w-8 h-8 rounded-full bg-indigo-500 border-2 border-indigo-400 flex items-center justify-center text-xs font-black text-white animate-bounce shadow-lg shadow-indigo-500/50";
             labelSpan.className = "text-[9px] font-black text-indigo-400 leading-tight";
-          } else if (status === 'PAID') {
+          } else if (normStatus === 'PAID') {
             iconDiv.className = "w-8 h-8 rounded-full bg-emerald-500 border-2 border-emerald-300 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-emerald-500/50";
             labelSpan.className = "text-[9px] font-black text-emerald-300 leading-tight";
           } else {
@@ -607,19 +614,19 @@
             labelSpan.className = "text-[9px] font-black text-amber-400 leading-tight";
           }
         } else {
-          // Pasif Adımlar
+          // Henüz Gelinmemiş Aşamalar
           iconDiv.className = "w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500";
           labelSpan.className = "text-[9px] font-bold text-slate-500 leading-tight";
         }
       });
 
-      // MASA KAPANDIĞINDA (PAID) 5 SANİYE SONRA TEMİZLE
-      if (status === 'PAID') {
+      // ÖDEME ALINDIĞINDA (PAID) MASA KAPATILIR VE KART SIFIRLANIR
+      if (normStatus === 'PAID') {
         setTimeout(() => {
           document.getElementById('live-tracker-card').classList.add('hidden');
           localStorage.removeItem('evreka_active_order_id');
           if (trackingInterval) clearInterval(trackingInterval);
-        }, 5000);
+        }, 4000);
       }
     }
   </script>
