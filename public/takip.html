@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-950 text-white">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evreka Pizza - Sipariş Takibi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Plus Jakarta Sans', sans-serif; } </style>
+</head>
+<body class="h-full bg-slate-900 p-4">
+
+  <div class="max-w-xl mx-auto space-y-4 pb-12">
+    <!-- ÜST BAR -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h1 class="text-base font-black" id="page-title">Masa Sipariş Takibi</h1>
+      </div>
+      <a href="/" class="bg-slate-800 hover:bg-slate-700 text-xs px-3.5 py-2 rounded-xl font-bold border border-slate-700 flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-arrow-left"></i> Menüye Dön
+      </a>
+    </div>
+
+    <!-- ÇOKLU SİPARİŞ KARTLARI LİSTESİ -->
+    <div id="orders-list-container" class="space-y-3">
+      <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">
+        Yükleniyor veya aktif sipariş bulunamadı...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const currentTable = localStorage.getItem('evreka_customer_table') || null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!currentTable) {
+        window.location.href = '/';
+        return;
+      }
+      document.getElementById('page-title').innerText = `${currentTable} - Canlı Takip`;
+      fetchAndRenderTracker();
+      setInterval(fetchAndRenderTracker, 1500);
+    });
+
+    function getTableOrderIds() {
+      const list = localStorage.getItem(`evreka_orders_${currentTable}`);
+      return list ? JSON.parse(list) : [];
+    }
+
+    async function fetchAndRenderTracker() {
+      const orderIds = getTableOrderIds();
+      const container = document.getElementById('orders-list-container');
+
+      if (orderIds.length === 0) {
+        container.innerHTML = `
+          <div class="p-12 text-center text-slate-400 text-xs bg-slate-800/50 rounded-3xl border border-slate-800 space-y-3">
+            <i class="fa-solid fa-receipt text-3xl text-slate-600"></i>
+            <p>Henüz aktif siparişiniz bulunmuyor.</p>
+            <a href="/" class="inline-block bg-red-600 text-white font-bold px-4 py-2 rounded-xl">Menüye Git & Sipariş Ver</a>
+          </div>`;
+        return;
+      }
+
+      let allOrders = [];
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) allOrders = data.orders;
+      } catch (e) {}
+
+      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+
+      // Masaya ait siparişleri filtrele
+      const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
+
+      if (myOrders.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">Sipariş verileriniz yükleniyor...</div>';
+        return;
+      }
+
+      container.innerHTML = myOrders.map(o => {
+        const strId = String(o.id);
+        let status = (localStatuses[strId] || o.status || 'WAITING').toUpperCase();
+        if (status === 'WAITING_WAITER') status = 'WAITING';
+
+        const stepOrder = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
+        const activeIdx = Math.max(0, stepOrder.indexOf(status));
+
+        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+        let statusMsg = "⏳ Garson onayında, hazırlanıyor...";
+        
+        if (status === 'PREPARING') {
+          statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+          statusMsg = "🔥 Taş fırına verildi, pişiyor!";
+        } else if (status === 'SERVED') {
+          statusBg = "bg-indigo-500/10 border-indigo-500/30 text-indigo-400";
+          statusMsg = "🍽️ Masanıza servis edildi. Afiyet olsun!";
+        } else if (status === 'PAID') {
+          statusBg = "bg-slate-700 border-slate-600 text-slate-300";
+          statusMsg = "✅ Ödeme alındı, masa kapatıldı.";
+        }
+
+        const itemsHtml = (o.items || []).map(i => `
+          <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
+            <div>
+              <span class="font-extrabold text-slate-200">${i.title}</span>
+              ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
+              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
+            </div>
+            <span class="font-black text-white">${i.price} ₺</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="bg-slate-800 border border-slate-700/80 rounded-3xl p-5 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl">Sipariş #${o.id}</span>
+              </div>
+              <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
+            </div>
+
+            <div class="space-y-2">
+              ${itemsHtml}
+            </div>
+
+            <!-- 3 AŞAMALI İKONİK İLERLEME ÇUBUĞU -->
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 0 ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/40' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <span class="text-[10px] ${activeIdx === 0 ? 'text-amber-400 font-black' : 'text-slate-500'}">Onay</span>
+              </div>
+
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 1 ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/40' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-fire"></i>
+                </div>
+                <span class="text-[10px] ${activeIdx === 1 ? 'text-emerald-400 font-black' : 'text-slate-500'}">Mutfak</span>
+              </div>
+
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/40' : 'bg-slate-700 text-slate-500'}">
+                  <i class="fa-solid fa-utensils"></i>
+                </div>
+                <span class="text-[10px] ${activeIdx === 2 ? 'text-indigo-400 font-black' : 'text-slate-500'}">Masada</span>
+              </div>
+            </div>
+
+            <div class="text-xs px-3 py-2 rounded-2xl border font-extrabold ${statusBg} flex items-center justify-center text-center">
+              <span>${statusMsg}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
