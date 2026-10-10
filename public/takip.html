@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evreka Pizza - Sipariş Takibi</title>
+  <title>Evreka Pizza - Canlı Sipariş Takibi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -53,8 +53,12 @@
 
       if (masaParam) {
         currentTable = parseAndFormatTable(masaParam);
-        if (currentTable) localStorage.setItem('evreka_customer_table', currentTable);
+        if (currentTable) {
+          // URL'de hangi masa varsa kesin olarak onu sabitle
+          localStorage.setItem('evreka_customer_table', currentTable);
+        }
       } else {
+        // URL'de yoksa depolamadakini al
         currentTable = localStorage.getItem('evreka_customer_table') || null;
       }
 
@@ -70,6 +74,7 @@
       setInterval(fetchAndRenderTracker, 1000);
     });
 
+    // 🔒 SADECE AKTİF MASAYA AİT SİPARİŞ ID'LERİNİ GETİRİR
     function getTableOrderIds() {
       if (!currentTable) return [];
       const list = localStorage.getItem(`evreka_orders_${currentTable}`);
@@ -84,7 +89,7 @@
         container.innerHTML = `
           <div class="p-12 text-center text-slate-400 text-xs bg-slate-800/50 rounded-3xl border border-slate-800 space-y-3">
             <i class="fa-solid fa-receipt text-3xl text-slate-600"></i>
-            <p>Henüz bu masada aktif siparişiniz bulunmuyor.</p>
+            <p>Henüz ${currentTable} için aktif siparişiniz bulunmuyor.</p>
             <a href="/?masa=${encodeURIComponent(currentTable)}" class="inline-block bg-red-600 text-white font-bold px-4 py-2 rounded-xl">Menüye Git & Sipariş Ver</a>
           </div>`;
         return;
@@ -99,7 +104,7 @@
 
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-      // Masaya ait siparişleri filtrele
+      // Sadece bu masaya ait olan siparişleri filtrele
       const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
 
       if (myOrders.length === 0) {
@@ -109,23 +114,23 @@
 
       container.innerHTML = myOrders.map(o => {
         const strId = String(o.id);
-        
-        // Sunucu durumunu temizle ve standartlaştır
         let rawStatus = String(o.status || localStatuses[strId] || 'WAITING').toUpperCase().trim();
 
-        let activeStep = 0; // 0: WAITING, 1: PREPARING, 2: SERVED, 3: PAID
+        let activeStep = 0; 
         let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
         let statusMsg = "⏳ Siparişiniz garson onayında, mutfağa iletiliyor...";
 
-        if (rawStatus === 'PREPARING') {
+        const servedVariants = ['SERVED', 'SERVICED', 'DELIVERED', 'READY', 'COMPLETED', 'DONE', 'FINISHED', 'IN_SERVICE', 'KITCHEN_DONE', 'HAZIR', 'SERVIS_EDILDI'];
+
+        if (servedVariants.includes(rawStatus)) {
+          activeStep = 2; 
+          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-extrabold animate-pulse shadow-lg shadow-indigo-500/20";
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
+        } else if (rawStatus === 'PREPARING' || rawStatus === 'MUTFAK' || rawStatus === 'PISIRIYOR') {
           activeStep = 1;
           statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
           statusMsg = "🔥 Siparişiniz mutfakta fırına verildi, pişim aşamasında!";
-        } else if (rawStatus === 'SERVED' || rawStatus === 'SERVICED' || rawStatus === 'READY' || rawStatus === 'DELIVERED') {
-          activeStep = 2; // MASADA AŞAMASI (3. İKON)
-          statusBg = "bg-indigo-500/20 border-indigo-500/40 text-indigo-300 font-extrabold animate-pulse";
-          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
-        } else if (rawStatus === 'PAID') {
+        } else if (rawStatus === 'PAID' || rawStatus === 'ODENDI') {
           activeStep = 3;
           statusBg = "bg-slate-700 border-slate-600 text-slate-300";
           statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
@@ -155,7 +160,6 @@
               ${itemsHtml}
             </div>
 
-            <!-- 3 AŞAMALI ANLIK CANLI İKON BARI -->
             <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
               <div class="flex flex-col items-center gap-1">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/40' : 'bg-slate-700 text-slate-500'}">
@@ -172,7 +176,7 @@
               </div>
 
               <div class="flex flex-col items-center gap-1">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/50 animate-bounce' : 'bg-slate-700 text-slate-500'}">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/60 animate-bounce' : 'bg-slate-700 text-slate-500'}">
                   <i class="fa-solid fa-utensils"></i>
                 </div>
                 <span class="text-[10px] ${activeStep >= 2 ? 'text-indigo-400 font-black' : 'text-slate-400'}">3. Masada</span>
