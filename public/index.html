@@ -45,7 +45,7 @@
     </div>
   </header>
 
-  <!-- CANLI ADIMLI SİPARİŞ TAKİP BARI -->
+  <!-- CANLI ADIMLI SİPARİŞ TAKİP BARI (MASAYA ÖZEL) -->
   <div id="live-tracker-card" class="hidden bg-slate-900 text-white border-b border-slate-800 p-4 sticky top-[57px] z-30 shadow-2xl">
     <div class="max-w-xl mx-auto space-y-3">
       <div class="flex items-center justify-between">
@@ -59,6 +59,7 @@
         <span class="text-[10px] font-mono bg-slate-800 text-amber-400 px-2 py-0.5 rounded-lg border border-slate-700 font-bold" id="tracker-order-id">#0000</span>
       </div>
 
+      <!-- 4 AŞAMALI TIMELINE PROGRESS BAR -->
       <div class="grid grid-cols-4 gap-1 relative py-2">
         <div class="flex flex-col items-center text-center space-y-1" id="step-WAITING">
           <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-500 step-icon">
@@ -286,7 +287,6 @@
     ];
 
     let currentTable = localStorage.getItem('evreka_customer_table') || null;
-    let activeOrderId = localStorage.getItem('evreka_active_order_id') || null;
     let cart = [];
     let selectedProduct = null;
     let selectedSize = null;
@@ -302,20 +302,31 @@
         document.getElementById('active-table-display').innerText = currentTable;
         document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
         closeTableModal();
+        checkAndStartCurrentTableTracking();
       } else {
         openTableModal();
       }
 
-      if (activeOrderId) {
-        startOrderTracking(activeOrderId);
-      }
-
       window.addEventListener('storage', (e) => {
-        if (e.key === 'evreka_order_statuses' && activeOrderId) {
+        if (currentTable && (e.key === 'evreka_order_statuses' || e.key === `evreka_active_order_${currentTable}`)) {
           syncDirectFromLocalStorage();
         }
       });
     });
+
+    function getTableActiveOrderId() {
+      if (!currentTable) return null;
+      return localStorage.getItem(`evreka_active_order_${currentTable}`);
+    }
+
+    function checkAndStartCurrentTableTracking() {
+      const activeId = getTableActiveOrderId();
+      if (activeId) {
+        startOrderTracking(activeId);
+      } else {
+        document.getElementById('live-tracker-card').classList.add('hidden');
+      }
+    }
 
     function showInfoModal(title, desc) {
       document.getElementById('info-modal-title').innerText = title;
@@ -360,6 +371,7 @@
       document.getElementById('active-table-display').innerText = currentTable;
       document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
       closeTableModal();
+      checkAndStartCurrentTableTracking();
     }
 
     function openTableModal() { document.getElementById('table-modal').classList.remove('hidden'); }
@@ -563,8 +575,10 @@
 
         const data = await response.json();
         if (data.success) {
-          activeOrderId = data.order.id;
-          localStorage.setItem('evreka_active_order_id', activeOrderId);
+          const activeOrderId = data.order.id;
+          
+          // Siparişi SADECE MEVCUT MASAYA Özel Kilitli Kaydet
+          localStorage.setItem(`evreka_active_order_${currentTable}`, activeOrderId);
           
           let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
           localStatuses[activeOrderId] = 'WAITING';
@@ -589,9 +603,7 @@
 
     function closeSuccessModalAndTrack() {
       document.getElementById('order-success-modal').classList.add('hidden');
-      if (activeOrderId) {
-        startOrderTracking(activeOrderId);
-      }
+      checkAndStartCurrentTableTracking();
     }
 
     function startOrderTracking(orderId) {
@@ -603,7 +615,12 @@
     }
 
     function syncDirectFromLocalStorage() {
-      if (!activeOrderId) return;
+      const activeOrderId = getTableActiveOrderId();
+      if (!activeOrderId || !currentTable) {
+        document.getElementById('live-tracker-card').classList.add('hidden');
+        if (trackingInterval) clearInterval(trackingInterval);
+        return;
+      }
 
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       const localOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
@@ -611,14 +628,14 @@
       let status = localStatuses[activeOrderId] || 'WAITING';
       let orderObj = localOrders.find(o => String(o.id) === String(activeOrderId));
 
-      document.getElementById('tracker-table-title').innerText = `${(orderObj && orderObj.tableName) || currentTable} - Canlı Sipariş Takibi`;
+      document.getElementById('tracker-table-title').innerText = `${currentTable} - Canlı Sipariş Takibi`;
       document.getElementById('tracker-order-id').innerText = `#${activeOrderId}`;
       document.getElementById('tracker-order-price').innerText = `${(orderObj && orderObj.totalPrice) || 0} ₺`;
 
-      updateStepVisuals(status);
+      updateStepVisuals(status, activeOrderId);
     }
 
-    function updateStepVisuals(status) {
+    function updateStepVisuals(status, activeOrderId) {
       const statusText = document.getElementById('tracker-status-text');
       
       let normStatus = String(status).toUpperCase();
@@ -658,10 +675,13 @@
         }
       });
 
+      // MASA ÖDENDİĞİNDE SADECE MEVCUT MASANIN SİPARİŞİNİ TEMİZLE
       if (normStatus === 'PAID') {
         setTimeout(() => {
           document.getElementById('live-tracker-card').classList.add('hidden');
-          localStorage.removeItem('evreka_active_order_id');
+          if (currentTable) {
+            localStorage.removeItem(`evreka_active_order_${currentTable}`);
+          }
           if (trackingInterval) clearInterval(trackingInterval);
         }, 4000);
       }
