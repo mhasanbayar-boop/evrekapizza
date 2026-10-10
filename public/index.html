@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evreka Pizza - Gurme QR Menü</title>
+  <title>Evreka Pizza - QR Menü</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,6 +24,24 @@
 </head>
 <body class="h-full text-slate-800 bg-slate-100 flex flex-col antialiased">
 
+  <!-- QR KODSUZ GİRİŞ ENGEL EKRANI -->
+  <div id="no-table-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 text-center hidden">
+    <div class="max-w-sm bg-slate-900 border border-slate-800 p-8 rounded-3xl space-y-4 shadow-2xl">
+      <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black border border-red-500/30">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <h2 class="text-xl font-black text-white">Masa Bilgisi Bulunamadı</h2>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Sipariş verebilmek için lütfen masanızdaki <b class="text-amber-400">QR kodu okutarak</b> giriş yapınız.
+      </p>
+      <div class="pt-2">
+        <span class="inline-block bg-slate-800 text-slate-400 text-[10px] font-mono px-3 py-1.5 rounded-xl border border-slate-700">
+          Örn: site.com/?masa=Masa 15
+        </span>
+      </div>
+    </div>
+  </div>
+
   <!-- ÜST BAR -->
   <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-xl border-b border-slate-800">
     <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -37,11 +55,11 @@
         </div>
       </div>
 
-      <button id="table-select-btn" onclick="openTableModal()" class="bg-red-600/20 text-red-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-red-500/40 flex items-center gap-2 shadow-inner transition animate-pulse">
-        <i class="fa-solid fa-chair"></i>
-        <span id="active-table-display">⚠️ Masa Seçilmedi</span>
-        <i class="fa-solid fa-chevron-down text-[10px] opacity-60"></i>
-      </button>
+      <!-- KİLİTLİ MASA GÖSTERGESİ -->
+      <div id="table-display-badge" onclick="alert('Masaya QR kod ile bağlandınız, masa değiştirilemez.')" class="bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 cursor-pointer shadow-inner">
+        <i class="fa-solid fa-lock text-[10px]"></i>
+        <span id="active-table-display">Masa Yükleniyor...</span>
+      </div>
     </div>
   </header>
 
@@ -55,7 +73,7 @@
         </span>
         <span class="text-slate-200 font-bold" id="mini-tracker-text">Aktif Siparişiniz Var</span>
       </div>
-      <a href="/takip.html" class="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
+      <a id="tracker-link" href="/takip.html" class="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
         <i class="fa-solid fa-clock-rotate-left"></i> Siparişlerimi Takip Et ➔
       </a>
     </div>
@@ -113,7 +131,9 @@
     <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl sm:rounded-tl-3xl">
       <div>
         <h3 class="text-lg font-black text-slate-900">Sipariş Özetiniz</h3>
-        <p class="text-xs text-red-600 font-bold" id="cart-drawer-table-display">⚠️ Masa Seçilmedi</p>
+        <p class="text-xs text-emerald-600 font-extrabold flex items-center gap-1" id="cart-drawer-table-display">
+          <i class="fa-solid fa-lock text-[10px]"></i> Masa Yükleniyor...
+        </p>
       </div>
       <button onclick="closeCartDrawerExplicit()" class="w-8 h-8 rounded-full bg-slate-200/60 flex items-center justify-center text-slate-600 hover:bg-slate-200">
         <i class="fa-solid fa-xmark"></i>
@@ -147,25 +167,8 @@
         <span class="text-slate-400">Atanan Masa:</span>
         <span class="text-amber-400" id="success-modal-table">Masa -</span>
       </div>
-      <button onclick="window.location.href='/takip.html'" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
+      <button id="go-tracker-btn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
         <i class="fa-solid fa-clock-rotate-left"></i> Siparişlerimi Takip Et ➔
-      </button>
-    </div>
-  </div>
-
-  <!-- ZORUNLU MASA SEÇİM MODALI -->
-  <div id="table-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-slate-100">
-      <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
-        <i class="fa-solid fa-chair"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-black text-slate-900">Bulunduğunuz Masayı Seçin</h3>
-        <p class="text-xs text-slate-500 mt-1">Siparişinizin masanıza ulaşması için lütfen masa numaranızı seçin.</p>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2" id="table-buttons-grid"></div>
-      <button onclick="confirmTableSelection()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-red-600/30">
-        Seçimi Onayla & Menüye Gir
       </button>
     </div>
   </div>
@@ -226,21 +229,51 @@
       { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
     ];
 
-    let currentTable = null; // İlk girişte masa seçimi zorunlu kılındı
+    let currentTable = null;
     let cart = [];
     let selectedProduct = null;
     let selectedSize = null;
     let selectedExtras = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Sayfaya her girişte masa seçimini zorunlu kıl
-      localStorage.removeItem('evreka_customer_table');
-      currentTable = null;
-      
-      renderProducts('all');
-      renderTableButtons();
-      openTableModal(); // Pop-up açılır
+    // 20 MASA FORMATLAMA FONKSİYONU ("1" veya "Masa 1" -> "Masa 01")
+    function parseAndFormatTable(raw) {
+      if (!raw) return null;
+      let cleaned = decodeURIComponent(raw).trim();
+      let match = cleaned.match(/\d+/);
+      if (match) {
+        let num = parseInt(match[0], 10);
+        if (num >= 1 && num <= 20) {
+          return `Masa ${num < 10 ? '0' + num : num}`;
+        }
+      }
+      return cleaned;
+    }
 
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      let masaParam = urlParams.get('masa') || urlParams.get('table') || urlParams.get('m');
+
+      if (masaParam) {
+        currentTable = parseAndFormatTable(masaParam);
+        if (currentTable) localStorage.setItem('evreka_customer_table', currentTable);
+      } else {
+        currentTable = localStorage.getItem('evreka_customer_table') || null;
+      }
+
+      if (!currentTable) {
+        document.getElementById('no-table-screen').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('active-table-display').innerText = currentTable;
+      document.getElementById('cart-drawer-table-display').innerHTML = `<i class="fa-solid fa-lock text-[10px]"></i> ${currentTable}`;
+      
+      const trackerUrl = `/takip.html?masa=${encodeURIComponent(currentTable)}`;
+      document.getElementById('tracker-link').href = trackerUrl;
+      document.getElementById('go-tracker-btn').onclick = () => window.location.href = trackerUrl;
+
+      renderProducts('all');
+      checkActiveOrdersMini();
       setInterval(checkActiveOrdersMini, 2000);
     });
 
@@ -290,48 +323,6 @@
       } catch (e) {}
     }
 
-    function renderTableButtons() {
-      const grid = document.getElementById('table-buttons-grid');
-      let html = '';
-      for (let i = 1; i <= 12; i++) {
-        const tName = `Masa ${i < 10 ? '0' + i : i}`;
-        const isSelected = currentTable === tName;
-        html += `
-          <button onclick="selectTable('${tName}')" class="p-3 rounded-xl border text-xs font-black transition ${isSelected ? 'border-red-600 bg-red-600 text-white shadow-md' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}">
-            ${tName}
-          </button>
-        `;
-      }
-      grid.innerHTML = html;
-    }
-
-    function selectTable(tName) { 
-      currentTable = tName; 
-      renderTableButtons(); 
-    }
-
-    function confirmTableSelection() {
-      if (!currentTable) {
-        alert("Lütfen bulunduğunuz masa numarasını seçiniz!");
-        return;
-      }
-      localStorage.setItem('evreka_customer_table', currentTable);
-      document.getElementById('table-select-btn').className = "bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 shadow-inner transition";
-      document.getElementById('active-table-display').innerText = currentTable;
-      document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
-      closeTableModal();
-      checkActiveOrdersMini();
-    }
-
-    function openTableModal() { document.getElementById('table-modal').classList.remove('hidden'); }
-    function closeTableModal() { 
-      if (!currentTable) {
-        alert("Masa seçmeden menüyü kullanamazsınız!");
-        return;
-      }
-      document.getElementById('table-modal').classList.add('hidden'); 
-    }
-
     function filterCategory(cat) { renderProducts(cat); }
 
     function renderProducts(filter) {
@@ -359,7 +350,6 @@
     }
 
     function openOptionsModal(id) {
-      if (!currentTable) { openTableModal(); return; }
       selectedProduct = catalog.find(p => p.id === id);
       selectedSize = selectedProduct.sizes.length > 0 ? selectedProduct.sizes[0] : null;
       selectedExtras = [];
@@ -425,7 +415,6 @@
       renderCartDrawerItems();
     }
     function toggleCartDrawer() {
-      if (!currentTable) { openTableModal(); return; }
       if (cart.length === 0) { alert('Sepetiniz boş'); return; }
       const drawer = document.getElementById('cart-drawer');
       const overlay = document.getElementById('drawer-overlay');
