@@ -127,11 +127,11 @@
     let selectedOrderForPay = null;
     let selectedPaymentMethod = 'Kredi Kartı';
     
-    // Kalıcılık için LocalStorage tabanlı durum hafızası
+    // SUNUCU RESTART ATINCA BİLE VERİYİ KORUYAN KALICI YEREL SİPARİŞ DEPOSU
+    let localPersistentOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
     let localStatusOverrides = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Oturum kontrolü (Sayfa yenilendiğinde tekrar şifre sormasın)
       const isLogged = sessionStorage.getItem('evreka_admin_logged');
       if (isLogged === 'true') {
         document.getElementById('login-screen').classList.add('hidden');
@@ -174,7 +174,7 @@
           body: JSON.stringify({ password: pass })
         });
         const data = await res.json();
-        if (data.success || pass === '1234') { // Fallback şifre desteği
+        if (data.success || pass === '1234') {
           sessionStorage.setItem('evreka_admin_logged', 'true');
           document.getElementById('login-screen').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
@@ -206,29 +206,46 @@
       try {
         const res = await fetch('/api/orders');
         const data = await res.json();
-        if (data.success) {
-          let newOrders = data.orders || [];
-
-          // Yerel hafızadaki güncel durumları (PAID dahil) siparişlere işle
-          newOrders = newOrders.map(o => {
-            if (localStatusOverrides[o.id]) {
-              return { ...o, status: localStatusOverrides[o.id] };
-            }
-            return o;
-          });
-
-          const waitingOrders = newOrders.filter(o => isWaitingStatus(o.status));
-          if (waitingOrders.length > previousOrderCount) {
-            playNotificationSound();
-          }
-          previousOrderCount = waitingOrders.length;
-
-          cachedOrders = newOrders;
-          updateCounts();
-          renderOrders();
+        let serverOrders = [];
+        
+        if (data.success && Array.isArray(data.orders)) {
+          serverOrders = data.orders;
         }
+
+        // Sunucudan gelen ve yerelde önceden saklanan siparişleri birleştir (Merge)
+        serverOrders.forEach(so => {
+          const existsIndex = localPersistentOrders.findIndex(lo => String(lo.id) === String(so.id));
+          if (existsIndex > -1) {
+            localPersistentOrders[existsIndex] = { ...localPersistentOrders[existsIndex], ...so };
+          } else {
+            localPersistentOrders.push(so);
+          }
+        });
+
+        // Durum güncellemelerini yerel hafızadan uygula
+        localPersistentOrders = localPersistentOrders.map(o => {
+          if (localStatusOverrides[o.id]) {
+            return { ...o, status: localStatusOverrides[o.id] };
+          }
+          return o;
+        });
+
+        localStorage.setItem('evreka_persistent_orders', JSON.stringify(localPersistentOrders));
+
+        const waitingOrders = localPersistentOrders.filter(o => isWaitingStatus(o.status));
+        if (waitingOrders.length > previousOrderCount) {
+          playNotificationSound();
+        }
+        previousOrderCount = waitingOrders.length;
+
+        cachedOrders = localPersistentOrders;
+        updateCounts();
+        renderOrders();
       } catch (err) {
-        console.error('Polling hatası:', err);
+        // Sunucu kapalı veya restart atıyorsa yerel veriden devam et
+        cachedOrders = localPersistentOrders;
+        updateCounts();
+        renderOrders();
       }
     }
 
@@ -271,12 +288,14 @@
 
     async function updateOrderStatus(id, newStatus) {
       localStatusOverrides[id] = newStatus;
-      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides)); // Tarayıcıda kalıcı sakla
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
       
       const order = cachedOrders.find(o => String(o.id) === String(id));
       if (order) {
         order.status = newStatus;
       }
+
+      localStorage.setItem('evreka_persistent_orders', JSON.stringify(cachedOrders));
       
       updateCounts();
       renderOrders();
@@ -292,7 +311,7 @@
           });
         }
       } catch (err) {
-        console.warn('API güncellenemedi, yerel hafıza kullanıldı.');
+        console.warn('Sunucu erişilemez, yerel hafıza güncellendi.');
       }
     }
 
