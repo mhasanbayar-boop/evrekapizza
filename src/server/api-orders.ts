@@ -1,23 +1,18 @@
 import express from 'express';
-import type { Request, Response } from 'express';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 const app = express();
 app.use(express.json());
-
-// Statik dosyaları dışa açmak için:
 app.use(express.static('public'));
 
-// Sunucu tarafında tutulan güvenli admin şifresi / hash
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update('1234').digest('hex');
 
-// ==================== DOSYA TABANLI KALICILIK (Sıfırlanmayı Önler) ====================
-// orders.json dosyasını projenin ana kök dizininde saklar
+// Dosya tabanlı kalıcılık (Railway yeniden başlasa bile ciro ve siparişler silinmez)
 const DATA_FILE = path.join(process.cwd(), 'orders.json');
 
-function loadOrders(): any[] {
+function loadOrders() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = fs.readFileSync(DATA_FILE, 'utf8');
@@ -29,7 +24,7 @@ function loadOrders(): any[] {
   return [];
 }
 
-function saveOrders(orders: any[]) {
+function saveOrders(orders: any) {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(orders, null, 2), 'utf8');
   } catch (err) {
@@ -37,11 +32,9 @@ function saveOrders(orders: any[]) {
   }
 }
 
-// Bellek yerine diskteki dosyadan başlatıyoruz
-let ordersDb: any[] = loadOrders();
+let ordersDb = loadOrders();
 
-// ==================== AUTH ENDPOINT ====================
-app.post('/api/auth/login', (req: Request, res: Response) => {
+app.post('/api/auth/login', (req: any, res: any) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Şifre gereklidir.' });
 
@@ -54,8 +47,7 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   return res.status(401).json({ error: 'Geçersiz yönetici şifresi!' });
 });
 
-// ==================== ORDERS API ====================
-app.post('/api/orders', (req: Request, res: Response) => {
+app.post('/api/orders', (req: any, res: any) => {
   const { tableName, items, totalPrice } = req.body;
 
   if (!tableName || !items || !Array.isArray(items) || items.length === 0) {
@@ -65,25 +57,24 @@ app.post('/api/orders', (req: Request, res: Response) => {
   const newOrder = {
     id: 'EVR-' + Math.floor(100000 + Math.random() * 900000),
     tableName,
-    status: 'WAITING_WAITER', // WAITING_WAITER -> PREPARING -> SERVED -> PAID
+    status: 'WAITING_WAITER',
     items,
     totalPrice,
     createdAt: new Date().toISOString()
   };
 
   ordersDb.unshift(newOrder);
-  saveOrders(ordersDb); // Her yeni siparişte diske kaydet
+  saveOrders(ordersDb);
   return res.status(201).json({ success: true, order: newOrder });
 });
 
-app.get('/api/orders', (req: Request, res: Response) => {
+app.get('/api/orders', (req: any, res: any) => {
   return res.json({ success: true, orders: ordersDb });
 });
 
-// Siparişi Onayla / Mutfağa Gönder (PREPARING)
-app.patch('/api/orders/:id/approve', (req: Request, res: Response) => {
+app.patch('/api/orders/:id/approve', (req: any, res: any) => {
   const { id } = req.params;
-  const order = ordersDb.find(o => o.id === id);
+  const order = ordersDb.find((o: any) => o.id === id);
 
   if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı.' });
 
@@ -94,10 +85,9 @@ app.patch('/api/orders/:id/approve', (req: Request, res: Response) => {
   return res.json({ success: true, order });
 });
 
-// Masaya Servis Edildi (SERVED) -> Müşteri ekranında 3. aşamayı tetikler
-app.patch('/api/orders/:id/serve', (req: Request, res: Response) => {
+app.patch('/api/orders/:id/serve', (req: any, res: any) => {
   const { id } = req.params;
-  const order = ordersDb.find(o => o.id === id);
+  const order = ordersDb.find((o: any) => o.id === id);
 
   if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı.' });
 
@@ -108,10 +98,9 @@ app.patch('/api/orders/:id/serve', (req: Request, res: Response) => {
   return res.json({ success: true, order });
 });
 
-// Ödendi Yap (PAID)
-app.patch('/api/orders/:id/pay', (req: Request, res: Response) => {
+app.patch('/api/orders/:id/pay', (req: any, res: any) => {
   const { id } = req.params;
-  const order = ordersDb.find(o => o.id === id);
+  const order = ordersDb.find((o: any) => o.id === id);
 
   if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı.' });
 
@@ -122,11 +111,10 @@ app.patch('/api/orders/:id/pay', (req: Request, res: Response) => {
   return res.json({ success: true, order });
 });
 
-// Genel Durum Güncelleme Alternatifi
-app.patch('/api/orders/:id/status', (req: Request, res: Response) => {
+app.patch('/api/orders/:id/status', (req: any, res: any) => {
   const { id } = req.params;
   const { status } = req.body;
-  const order = ordersDb.find(o => o.id === id);
+  const order = ordersDb.find((o: any) => o.id === id);
 
   if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı.' });
   if (!status) return res.status(400).json({ error: 'Durum gereklidir.' });
@@ -138,9 +126,9 @@ app.patch('/api/orders/:id/status', (req: Request, res: Response) => {
   return res.json({ success: true, order });
 });
 
-app.delete('/api/orders/:id', (req: Request, res: Response) => {
+app.delete('/api/orders/:id', (req: any, res: any) => {
   const { id } = req.params;
-  const orderIndex = ordersDb.findIndex(o => o.id === id);
+  const orderIndex = ordersDb.findIndex((o: any) => o.id === id);
 
   if (orderIndex === -1) return res.status(404).json({ error: 'Sipariş bulunamadı.' });
 
@@ -152,4 +140,6 @@ app.delete('/api/orders/:id', (req: Request, res: Response) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Evreka Pizza API ${PORT} portunda çalışıyor.`));
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Evreka Pizza API ${PORT} portunda çalışıyor.`);
+});
