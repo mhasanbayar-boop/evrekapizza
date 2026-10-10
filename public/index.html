@@ -377,7 +377,7 @@
         if (rawStatus === 'PREPARING') {
           statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
           statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
-        } else if (rawStatus === 'SERVED') {
+        } else if (rawStatus === 'SERVED' || rawStatus === 'SERVICED' || rawStatus === 'DELIVERED') {
           statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
           statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-bold";
         } else if (rawStatus === 'PAID') {
