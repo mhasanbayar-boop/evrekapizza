@@ -36,7 +36,7 @@
       </p>
       <div class="pt-2">
         <span class="inline-block bg-slate-800 text-slate-400 text-[10px] font-mono px-3 py-1.5 rounded-xl border border-slate-700">
-          Örn: site.com/?masa=Masa 15
+          Örn: site.com/?masa=1
         </span>
       </div>
     </div>
@@ -235,7 +235,6 @@
     let selectedSize = null;
     let selectedExtras = [];
 
-    // 20 MASA FORMATLAMA FONKSİYONU ("1" veya "Masa 1" -> "Masa 01")
     function parseAndFormatTable(raw) {
       if (!raw) return null;
       let cleaned = decodeURIComponent(raw).trim();
