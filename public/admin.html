@@ -12,11 +12,11 @@
 <body class="h-full bg-slate-900 p-4">
 
   <div class="max-w-4xl mx-auto space-y-6 pb-12">
-    <!-- ÜST İSTATİSTİK BARI (Asla Sıfırlanmayan Ciro) -->
+    <!-- ÜST İSTATİSTİK BARI -->
     <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
       <div>
         <h1 class="text-xl font-black text-white flex items-center gap-2">
-          🍕 Garson & Mutak Paneli
+          🍕 Garson & Mutfak Paneli
         </h1>
         <p class="text-xs text-slate-400 mt-0.5">Canlı Sipariş Yönetimi & Ciro Takibi</p>
       </div>
@@ -61,13 +61,19 @@
 
     function renderAdminOrders(orders) {
       const container = document.getElementById('admin-orders-container');
-      
-      // Toplam Ciro ve Sipariş Hesabı
-      const totalRev = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-      document.getElementById('total-revenue').innerText = `${totalRev} ₺`;
-      document.getElementById('total-orders-count').innerText = orders.length;
+      const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-      if (orders.length === 0) {
+      // Yerel durumları API'den gelen siparişlere entegre et
+      const processedOrders = orders.map(o => ({
+        ...o,
+        status: localStatuses[String(o.id)] || o.status || 'WAITING'
+      }));
+
+      const totalRev = processedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      document.getElementById('total-revenue').innerText = `${totalRev} ₺`;
+      document.getElementById('total-orders-count').innerText = processedOrders.length;
+
+      if (processedOrders.length === 0) {
         container.innerHTML = `
           <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800 space-y-2">
             <i class="fa-solid fa-inbox text-3xl text-slate-600"></i>
@@ -76,12 +82,11 @@
         return;
       }
 
-      // En yeni sipariş en üstte görünür
-      const sorted = [...orders].reverse();
+      const sorted = [...processedOrders].reverse();
 
       container.innerHTML = sorted.map(o => {
         let statusTag = '';
-        let statusStr = String(o.status || 'WAITING').toUpperCase().trim();
+        let statusStr = String(o.status).toUpperCase().trim();
 
         if (statusStr === 'WAITING') {
           statusTag = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">⏳ Garson Onayı Bekliyor</span>';
@@ -121,7 +126,6 @@
               ${itemsHtml}
             </div>
 
-            <!-- BUTON HAREKETLERİ -->
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700/60">
               <button onclick="updateStatus(${o.id}, 'PREPARING')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-fire"></i> Mutfağa Gönder
@@ -139,23 +143,21 @@
     }
 
     async function updateStatus(orderId, newStatus) {
+      // Önce yerel durumu güncelle (Hızlı tepki için)
+      let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+      localStatuses[String(orderId)] = newStatus;
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
+      loadAdminOrders();
+
+      // Ardından API'ye gönder
       try {
-        const res = await fetch(`/api/orders/${orderId}`, {
+        await fetch(`/api/orders/${orderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
         });
-        const data = await res.json();
-        if (data.success) {
-          // Yerel durumu eşitle
-          let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-          localStatuses[String(orderId)] = newStatus;
-          localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
-          
-          loadAdminOrders();
-        }
       } catch (err) {
-        console.error("Durum güncellenemedi:", err);
+        console.error("Sunucu güncellenemedi:", err);
       }
     }
   </script>
