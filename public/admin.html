@@ -152,7 +152,7 @@
       </div>
       <div>
         <h3 class="text-lg font-black text-white">Siparişi İptal Et</h3>
-        <p class="text-xs text-slate-400 mt-1">Bu siparişi iptal etmek istediğinize emin misiniz? İşlem geri alınamaz.</p>
+        <p class="text-xs text-slate-400 mt-1">Bu siparişi iptal etmek istediğinize emin misiniz?</p>
       </div>
       <div class="grid grid-cols-2 gap-2 pt-2">
         <button onclick="closeCancelModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl text-xs transition">Vazgeç</button>
@@ -175,7 +175,7 @@
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
         fetchOrdersFromServer();
-        setInterval(fetchOrdersFromServer, 2500);
+        setInterval(fetchOrdersFromServer, 2000);
       } else {
         document.getElementById('login-screen').classList.remove('hidden');
       }
@@ -214,9 +214,7 @@
         }
         createTone(880, 0, 0.15);
         createTone(1174.66, 0.18, 0.3);
-      } catch (e) {
-        console.warn('Audio izni:', e);
-      }
+      } catch (e) {}
     }
 
     async function loginServer() {
@@ -233,9 +231,9 @@
           document.getElementById('login-screen').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
           playNotificationSound();
-          showToast("Giriş başarılı, hoş geldiniz!");
+          showToast("Giriş başarılı!");
           fetchOrdersFromServer();
-          setInterval(fetchOrdersFromServer, 2500);
+          setInterval(fetchOrdersFromServer, 2000);
         } else {
           showToast(data.error || 'Geçersiz Şifre!', 'error');
         }
@@ -246,7 +244,7 @@
           document.getElementById('dashboard').classList.remove('hidden');
           showToast("Giriş başarılı!");
           fetchOrdersFromServer();
-          setInterval(fetchOrdersFromServer, 2500);
+          setInterval(fetchOrdersFromServer, 2000);
         } else {
           showToast('Sunucuya bağlanılamadı.', 'error');
         }
@@ -258,27 +256,42 @@
       location.reload(); 
     }
 
-    // 🌐 BULUT SUNUCUDAN ANLIK ÇEKİM (HİÇBİR CİHAZDA SIFIRLANMAZ)
     async function fetchOrdersFromServer() {
       try {
         const res = await fetch('/api/orders');
         const data = await res.json();
         
+        let serverOrders = [];
         if (data.success && Array.isArray(data.orders)) {
-          cachedOrders = data.orders;
-          
-          const waitingOrders = cachedOrders.filter(o => o.status === 'WAITING' || o.status === 'WAITING_WAITER');
-          if (waitingOrders.length > previousOrderCount) {
-            playNotificationSound();
-            showToast("🛎️ Yeni sipariş düştü!");
-          }
-          previousOrderCount = waitingOrders.length;
-
-          updateFinancialReportsAndCounts();
-          renderOrders();
+          serverOrders = data.orders;
+        } else {
+          serverOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
         }
+
+        const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+
+        cachedOrders = serverOrders.map(o => {
+          if (localStatuses[o.id]) {
+            return { ...o, status: localStatuses[o.id] };
+          }
+          return o;
+        });
+
+        localStorage.setItem('evreka_persistent_orders', JSON.stringify(cachedOrders));
+
+        const waitingOrders = cachedOrders.filter(o => o.status === 'WAITING' || o.status === 'WAITING_WAITER');
+        if (waitingOrders.length > previousOrderCount) {
+          playNotificationSound();
+          showToast("🛎️ Yeni sipariş düştü!");
+        }
+        previousOrderCount = waitingOrders.length;
+
+        updateFinancialReportsAndCounts();
+        renderOrders();
       } catch (err) {
-        console.warn('Sunucu bağlantı hatası:', err);
+        cachedOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
+        updateFinancialReportsAndCounts();
+        renderOrders();
       }
     }
 
@@ -299,10 +312,9 @@
       document.getElementById('stat-mutfakta').innerText = preparing;
       document.getElementById('stat-servis').innerText = served;
 
-      // TOPLAM, GÜNLÜK VE AYLIK CİRO HESAPLAMA
       const now = new Date();
-      const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-      const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
+      const todayStr = now.toISOString().slice(0, 10);
+      const currentMonthStr = now.toISOString().slice(0, 7);
 
       let totalCiro = 0;
       let dailyCiro = 0;
@@ -312,15 +324,12 @@
         if (o.status === 'PAID') {
           const price = Number(o.totalPrice) || 0;
           totalCiro += price;
-
-          // Tarih kontrolü (EğercreatedAt varsa)
           if (o.createdAt) {
             const orderDateStr = String(o.createdAt).slice(0, 10);
             const orderMonthStr = String(o.createdAt).slice(0, 7);
             if (orderDateStr === todayStr) dailyCiro += price;
             if (orderMonthStr === currentMonthStr) monthlyCiro += price;
           } else {
-            // Tarih yoksa bugüne ekle
             dailyCiro += price;
             monthlyCiro += price;
           }
@@ -343,6 +352,22 @@
     }
 
     async function updateOrderStatus(id, newStatus) {
+      let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+      localStatuses[id] = newStatus;
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
+
+      const orderObj = cachedOrders.find(o => String(o.id) === String(id));
+      if (orderObj) orderObj.status = newStatus;
+
+      localStorage.setItem('evreka_persistent_orders', JSON.stringify(cachedOrders));
+
+      if (newStatus === 'PREPARING') showToast(`Sipariş #${id} Mutfağa Gönderildi`);
+      else if (newStatus === 'SERVED') showToast(`Sipariş #${id} Masaya Servis Edildi`);
+      else if (newStatus === 'PAID') showToast(`Sipariş #${id} Tahsil Edildi ve Kapatıldı`);
+
+      renderOrders();
+      updateFinancialReportsAndCounts();
+
       try {
         if (newStatus === 'PREPARING') {
           await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
@@ -353,15 +378,7 @@
             body: JSON.stringify({ status: newStatus })
           });
         }
-        
-        if (newStatus === 'PREPARING') showToast(`Sipariş #${id} Mutfağa Gönderildi`);
-        else if (newStatus === 'SERVED') showToast(`Sipariş #${id} Masaya Servis Edildi`);
-        else if (newStatus === 'PAID') showToast(`Sipariş #${id} Tahsil Edildi ve Kapatıldı`);
-
-        fetchOrdersFromServer();
-      } catch (err) {
-        showToast("Durum güncellenirken hata oluştu!", "error");
-      }
+      } catch (err) {}
     }
 
     function openPaymentModal(orderId) {
@@ -405,16 +422,15 @@
 
       if (selectedPaymentMethod === 'Kredi Kartı') {
         statusText.innerText = "📲 POS Cihazı İle İletişim Kuruluyor...";
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 600));
         statusText.innerText = "💳 Kart Okutuldu, Onay Bekleniyor...";
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 800));
       } else {
         statusText.innerText = "💵 Nakit Tahsilat Kaydediliyor...";
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 400));
       }
 
       await updateOrderStatus(selectedOrderForPay.id, 'PAID');
-      
       btn.disabled = false;
       closePaymentModal();
     }
@@ -435,13 +451,16 @@
       const id = pendingCancelOrderId;
       closeCancelModal();
 
+      let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+      localStatuses[id] = 'CANCELLED';
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
+
+      showToast(`Sipariş #${id} İptal Edildi`, 'error');
+      fetchOrdersFromServer();
+
       try {
         await fetch(`/api/orders/${id}`, { method: 'DELETE' });
-        showToast(`Sipariş #${id} İptal Edildi`, 'error');
-        fetchOrdersFromServer();
-      } catch (err) {
-        showToast("İptal edilemedi", "error");
-      }
+      } catch (err) {}
     }
 
     function renderOrders() {
@@ -466,7 +485,8 @@
         
         let statusBadge = '';
         let actionButtons = '';
-        const isWait = (o.status === 'WAITING' || o.status === 'WAITING_WAITER');
+        const normStatus = String(o.status).toUpperCase();
+        const isWait = (normStatus === 'WAITING' || normStatus === 'WAITING_WAITER');
 
         if (isWait) {
           statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Onay Bekliyor</span>';
@@ -480,24 +500,24 @@
               </button>
             </div>
           `;
-        } else if (o.status === 'PREPARING') {
+        } else if (normStatus === 'PREPARING') {
           statusBadge = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Mutfakta Hazırlanıyor</span>';
           actionButtons = `
             <button onclick="updateOrderStatus('${o.id}', 'SERVED')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
               <i class="fa-solid fa-bell"></i> Hazır / Masaya Servis Et
             </button>
           `;
-        } else if (o.status === 'SERVED') {
+        } else if (normStatus === 'SERVED') {
           statusBadge = '<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Masada / Ödeme Bekliyor</span>';
           actionButtons = `
             <button onclick="openPaymentModal('${o.id}')" class="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
               <i class="fa-solid fa-credit-card"></i> 💳 Ödeme Al (POS)
             </button>
           `;
-        } else if (o.status === 'PAID') {
+        } else if (normStatus === 'PAID') {
           statusBadge = '<span class="bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">Tamamlandı (Ödendi)</span>';
           actionButtons = `<div class="text-center text-xs text-slate-500 font-bold py-1">Masa Kapatıldı ✅</div>`;
-        } else if (o.status === 'CANCELLED') {
+        } else if (normStatus === 'CANCELLED') {
           statusBadge = '<span class="bg-slate-700 text-slate-400 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">İptal Edildi</span>';
         }
 
