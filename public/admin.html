@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <!-- İSTATİSTİK BARI -->
+    <!-- İSTATİSTİK BARI (Kalıcı / Sıfırlanmaz) -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
       <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
         <span class="text-slate-400 font-bold block mb-1">Toplam Ciro</span>
@@ -90,13 +90,11 @@
         </button>
       </div>
 
-      <!-- Tutar Bilgisi -->
       <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700/60 text-center">
         <span class="text-xs text-slate-400 font-bold uppercase block">Tahsil Edilecek Tutar</span>
         <span class="text-3xl font-black text-emerald-400 mt-1 block" id="pay-modal-amount">0 ₺</span>
       </div>
 
-      <!-- Ödeme Yöntemi Seçenekleri -->
       <div class="space-y-3">
         <label class="block text-xs font-bold text-slate-400 uppercase">Ödeme Yöntemini Seçin</label>
         
@@ -113,7 +111,6 @@
         </div>
       </div>
 
-      <!-- POS İletişim Durumu -->
       <div id="pos-status-area" class="hidden bg-slate-900/90 p-3 rounded-xl border border-slate-700 text-center text-xs space-y-1">
         <span class="text-amber-400 font-bold animate-pulse block" id="pos-status-text">POS Cihazına İstek Gönderiliyor...</span>
         <span class="text-[10px] text-slate-400 block">Lütfen kartı okutunuz veya şifre giriniz.</span>
@@ -131,9 +128,10 @@
     let previousOrderCount = 0;
     let selectedOrderForPay = null;
     let selectedPaymentMethod = 'Kredi Kartı';
-    let localStatusOverrides = {}; // Sunucu tarafı status desteklemiyorsa yerel hafızada tutma köprüsü
+    
+    // Kalıcılık için yerel durumları localStorage'dan yükle
+    let localStatusOverrides = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-    // BİLDİRİM SESİ
     function playNotificationSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -188,7 +186,7 @@
         if (data.success) {
           let newOrders = data.orders || [];
 
-          // Yerel durum değişikliklerini uygula
+          // localStorage üzerindeki durumları siparişlere işle
           newOrders = newOrders.map(o => {
             if (localStatusOverrides[o.id]) {
               return { ...o, status: localStatusOverrides[o.id] };
@@ -248,18 +246,20 @@
       renderOrders();
     }
 
-    // DURUM GÜNCELLEME (ONAY / MASAYA SERVİS / ÖDENDİ)
     async function updateOrderStatus(id, newStatus) {
-      localStatusOverrides[id] = newStatus; // Anında UI güncellemesi için kaydedilir
+      // Durumu hem hafızaya hem de kalıcı localStorage'a kaydet
+      localStatusOverrides[id] = newStatus;
+      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
       
       const order = cachedOrders.find(o => String(o.id) === String(id));
       if (order) {
         order.status = newStatus;
       }
       
+      updateCounts();
       renderOrders();
 
-      // Arka planda sunucuya istek gönder
+      // Arka planda sunucuya da bildir
       try {
         if (newStatus === 'PREPARING') {
           await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
@@ -275,7 +275,6 @@
       }
     }
 
-    // ÖDEME POPUP AÇ
     function openPaymentModal(orderId) {
       selectedOrderForPay = cachedOrders.find(o => String(o.id) === String(orderId));
       if (!selectedOrderForPay) return;
@@ -307,7 +306,6 @@
       }
     }
 
-    // POS İŞLEM VE MASA KAPATMA
     async function processPayment() {
       const btn = document.getElementById('confirm-pay-btn');
       const statusArea = document.getElementById('pos-status-area');
@@ -332,12 +330,12 @@
       closePaymentModal();
     }
 
-    // İPTAL ET
     async function cancelOrder(id) {
       if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return;
       try {
         localStatusOverrides[id] = 'CANCELLED';
-        const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatusOverrides));
+        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
         fetchOrdersFromServer();
       } catch (err) {
         alert('Hata oluştu.');
@@ -361,7 +359,10 @@
         return;
       }
 
-      container.innerHTML = filtered.map(o => {
+      // En yeni siparişlerin en üstte çıkması için ters çevir
+      const sorted = [...filtered].reverse();
+
+      container.innerHTML = sorted.map(o => {
         const timeFormatted = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Anlık';
         
         let statusBadge = '';
@@ -403,7 +404,6 @@
         return `
           <div class="bg-slate-800 border border-slate-700/80 rounded-3xl p-5 shadow-xl flex flex-col justify-between gap-4">
             <div>
-              <!-- Başlık -->
               <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-3">
                 <div class="flex items-center gap-2">
                   <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl shadow-md">${o.tableName}</span>
@@ -414,7 +414,6 @@
                 </div>
               </div>
 
-              <!-- Kalemler -->
               <div class="space-y-2">
                 ${(o.items || []).map(i => `
                   <div class="bg-slate-900/60 p-2.5 rounded-xl text-xs border border-slate-700/30 flex justify-between items-start">
@@ -429,7 +428,6 @@
               </div>
             </div>
 
-            <!-- Aksiyonlar -->
             <div class="border-t border-slate-700/60 pt-3 mt-1 flex flex-col gap-3">
               <div class="flex items-center justify-between">
                 ${statusBadge}
