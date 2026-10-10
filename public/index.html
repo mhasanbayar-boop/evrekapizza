@@ -20,7 +20,7 @@
 </head>
 <body class="h-full text-slate-800 bg-slate-100 flex flex-col antialiased">
 
-  <!-- QR KODSUZ GİRİŞ ENGEL EKRANI -->
+  <!-- MASA KONTROL EKRANI -->
   <div id="no-table-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 text-center hidden">
     <div class="max-w-sm bg-slate-900 border border-slate-800 p-8 rounded-3xl space-y-4 shadow-2xl">
       <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black border border-red-500/30">
@@ -51,7 +51,6 @@
         </div>
       </div>
 
-      <!-- KİLİTLİ MASA GÖSTERGESİ -->
       <div id="table-display-badge" class="bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 shadow-inner">
         <i class="fa-solid fa-lock text-[10px]"></i>
         <span id="active-table-display">Masa Yükleniyor...</span>
@@ -59,7 +58,7 @@
     </div>
   </header>
 
-  <!-- ANA SAYFA ÜSTÜ CANLI TAKİP BARI (Aktif sipariş varsa görünür) -->
+  <!-- CANLI TAKİP BARI -->
   <div id="mini-tracker-banner" class="hidden bg-slate-900 border-b border-slate-800 px-4 py-2.5 sticky top-[57px] z-30 shadow-lg">
     <div class="max-w-xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2 text-xs">
@@ -69,13 +68,13 @@
         </span>
         <span class="text-slate-200 font-bold" id="mini-tracker-text">Aktif Siparişiniz Var</span>
       </div>
-      <button onclick="toggleTrackerDrawer()" class="bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
+      <button onclick="toggleTrackerDrawer()" class="bg-gradient-to-r from-amber-500 to-red-600 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl shadow-md transition flex items-center gap-1.5">
         <i class="fa-solid fa-clock-rotate-left"></i> Canlı Takip Et ➔
       </button>
     </div>
   </div>
 
-  <!-- MENÜ ALANI -->
+  <!-- MENÜ -->
   <main class="flex-1 max-w-xl w-full mx-auto pb-28">
     <div class="p-4">
       <div class="bg-gradient-to-r from-red-600 via-amber-600 to-orange-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
@@ -84,17 +83,16 @@
           %100 Doğal Ekşi Maya
         </span>
         <h2 class="text-2xl font-black mt-2 leading-tight">İtalyan Usulü Taş Fırın</h2>
-        <p class="text-xs text-white/80 mt-1">Masadaki QR kod ile anında sipariş verin, garsonunuza ve mutfağımıza canlı aktarılsın.</p>
+        <p class="text-xs text-white/80 mt-1">Masadaki QR kod ile anında sipariş verin.</p>
       </div>
     </div>
 
     <!-- Kategori Filtreleri -->
     <div class="px-4 overflow-x-auto no-scrollbar flex gap-2 py-1 sticky top-[65px] z-20 bg-slate-100/90 backdrop-blur-md">
-      <button onclick="filterCategory('all')" class="cat-btn px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap">Tüm Menü</button>
-      <button onclick="filterCategory('pizza')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Pizzalar</button>
-      <button onclick="filterCategory('side')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Atıştırmalıklar</button>
-      <button onclick="filterCategory('beverage')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">İçecekler</button>
-      <button onclick="filterCategory('dessert')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Tatlılar</button>
+      <button onclick="filterCategory('all')" class="px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap">Tüm Menü</button>
+      <button onclick="filterCategory('pizza')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Pizzalar</button>
+      <button onclick="filterCategory('side')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Atıştırmalıklar</button>
+      <button onclick="filterCategory('beverage')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">İçecekler</button>
     </div>
 
     <div class="px-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" id="product-list"></div>
@@ -110,9 +108,9 @@
   <!-- YÜZEN SEPET BARI -->
   <div id="cart-bar" class="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent">
     <div class="max-w-xl mx-auto">
-      <button onclick="toggleCartDrawer()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-xl shadow-red-600/30 flex items-center justify-between transition active:scale-[0.98]">
+      <button onclick="toggleCartDrawer()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-xl flex items-center justify-between transition">
         <div class="flex items-center gap-3">
-          <span id="cart-badge" class="bg-white text-red-600 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-inner">0</span>
+          <span id="cart-badge" class="bg-white text-red-600 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black">0</span>
           <span class="text-sm">Sepeti İncele & Gönder</span>
         </div>
         <span id="cart-total-price" class="text-base font-black">0 ₺</span>
@@ -121,16 +119,16 @@
   </div>
 
   <!-- SEPET ÇEKMECESİ -->
-  <div id="drawer-overlay" onclick="closeCartDrawerExplicit()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
-  <div id="cart-drawer" class="cart-drawer fixed bottom-0 right-0 left-0 sm:left-auto sm:top-0 sm:w-96 bg-white z-50 rounded-t-3xl sm:rounded-l-3xl sm:rounded-t-none max-h-[85vh] sm:max-h-full flex flex-col shadow-2xl">
-    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl sm:rounded-tl-3xl">
+  <div id="drawer-overlay" onclick="closeCartDrawerExplicit()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden"></div>
+  <div id="cart-drawer" class="cart-drawer fixed bottom-0 right-0 left-0 sm:left-auto sm:top-0 sm:w-96 bg-white z-50 rounded-t-3xl sm:rounded-l-3xl max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
       <div>
         <h3 class="text-lg font-black text-slate-900">Sipariş Özetiniz</h3>
         <p class="text-xs text-emerald-600 font-extrabold flex items-center gap-1" id="cart-drawer-table-display">
           <i class="fa-solid fa-lock text-[10px]"></i> Masa Yükleniyor...
         </p>
       </div>
-      <button onclick="closeCartDrawerExplicit()" class="w-8 h-8 rounded-full bg-slate-200/60 flex items-center justify-center text-slate-600 hover:bg-slate-200">
+      <button onclick="closeCartDrawerExplicit()" class="w-8 h-8 rounded-full bg-slate-200/60 flex items-center justify-center text-slate-600">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
@@ -140,27 +138,25 @@
         <span class="text-slate-500 font-bold">Toplam Tutar:</span>
         <span id="cart-drawer-total" class="text-2xl font-black text-red-600">0 ₺</span>
       </div>
-      <button id="submit-btn" onclick="submitOrderToAPI()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition">
+      <button id="submit-btn" onclick="submitOrderToAPI()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg">
         <i class="fa-solid fa-paper-plane"></i> Garsona Siparişi Gönder
       </button>
     </div>
   </div>
 
-  <!-- 🚀 AYNI SAYFA İÇİNDE CANLI TAKİP ÇEKMECESİ (MODAL) -->
-  <div id="tracker-overlay" onclick="closeTrackerDrawer()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+  <!-- CANLI TAKİP ÇEKMECESİ -->
+  <div id="tracker-overlay" onclick="closeTrackerDrawer()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden"></div>
   <div id="tracker-drawer" class="tracker-drawer fixed bottom-0 right-0 left-0 bg-slate-900 text-white z-50 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl border-t border-slate-800">
     <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 rounded-t-3xl">
       <div class="flex items-center gap-2">
         <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-        <h3 class="text-lg font-black" id="tracker-drawer-title">Canlı Sipariş Takibi</h3>
+        <h3 class="text-lg font-black">Canlı Sipariş Takibi</h3>
       </div>
-      <button onclick="closeTrackerDrawer()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white">
+      <button onclick="closeTrackerDrawer()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-    <div id="tracker-items-container" class="flex-1 overflow-y-auto p-5 space-y-4">
-      <!-- Canlı siparişler buraya dolacak -->
-    </div>
+    <div id="tracker-items-container" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
   </div>
 
   <!-- SİPARİŞ BAŞARI MODALI -->
@@ -171,13 +167,13 @@
       </div>
       <div>
         <h3 class="text-xl font-black text-white">Siparişiniz Alındı!</h3>
-        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Siparişiniz mutfağımıza iletildi. Hemen canlı takip ekranından durumunu inceleyebilirsiniz.</p>
+        <p class="text-xs text-slate-400 mt-1">Siparişiniz mutfağımıza iletildi.</p>
       </div>
       <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs flex justify-between items-center font-bold">
         <span class="text-slate-400">Atanan Masa:</span>
         <span class="text-amber-400" id="success-modal-table">Masa -</span>
       </div>
-      <button onclick="closeSuccessModalAndOpenTracker()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2">
+      <button onclick="closeSuccessModalAndOpenTracker()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2">
         <i class="fa-solid fa-clock-rotate-left"></i> Canlı Takip Ekranını Aç ➔
       </button>
     </div>
@@ -188,13 +184,13 @@
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl flex flex-col">
       <div class="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-3xl bg-slate-100">
         <img id="modal-img" src="" alt="" class="w-full h-full object-cover">
-        <button onclick="closeOptionsModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 text-white backdrop-blur-md flex items-center justify-center hover:bg-black/80">
+        <button onclick="closeOptionsModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div>
         <h3 id="modal-title" class="text-xl font-black text-slate-900"></h3>
-        <p id="modal-desc" class="text-xs text-slate-500 mt-1 leading-relaxed"></p>
+        <p id="modal-desc" class="text-xs text-slate-500 mt-1"></p>
       </div>
 
       <div class="mt-5" id="size-section">
@@ -208,7 +204,7 @@
       </div>
 
       <div class="mt-5">
-        <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Mutfak / Garson Notu</label>
+        <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Garson Notu</label>
         <input type="text" id="modal-note" maxlength="200" placeholder="Örn: Acısı bol olsun..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
       </div>
 
@@ -224,19 +220,13 @@
   <script>
     const catalog = [
       {
-        id: 'piz-01', category: 'pizza', title: 'Evreka Special Pizza', description: 'Özel mozarella peyniri, dana sucuk, mantar, mısır, zeytin, kapya biber ve özel domates sosu.', basePrice: 280,
+        id: 'piz-01', category: 'pizza', title: 'Evreka Special Pizza', description: 'Özel mozarella peyniri, dana sucuk, mantar, mısır, zeytin.', basePrice: 280,
         image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 120 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }, { id: 'ex-mushroom', name: 'Ekstra Mantar', price: 20 }]
-      },
-      {
-        id: 'piz-02', category: 'pizza', title: 'Pepperoni & Mozarella', description: 'Bol İtalyan usulü dana füme sucuk, uzayan mozarella peyniri.', basePrice: 260,
-        image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 50 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 100 }],
+        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük', priceOffset: 120 }],
         extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
       { id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
+      { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
     ];
 
     let currentTable = null;
@@ -245,26 +235,13 @@
     let selectedSize = null;
     let selectedExtras = [];
 
-    function parseAndFormatTable(raw) {
-      if (!raw) return null;
-      let cleaned = decodeURIComponent(raw).trim();
-      let match = cleaned.match(/\d+/);
-      if (match) {
-        let num = parseInt(match[0], 10);
-        if (num >= 1 && num <= 20) {
-          return `Masa ${num < 10 ? '0' + num : num}`;
-        }
-      }
-      return cleaned;
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       let masaParam = urlParams.get('masa') || urlParams.get('table') || urlParams.get('m');
 
       if (masaParam) {
-        currentTable = parseAndFormatTable(masaParam);
-        if (currentTable) localStorage.setItem('evreka_customer_table', currentTable);
+        currentTable = decodeURIComponent(masaParam).trim();
+        localStorage.setItem('evreka_customer_table', currentTable);
       } else {
         currentTable = localStorage.getItem('evreka_customer_table') || null;
       }
@@ -321,7 +298,6 @@
           if (active.length > 0) {
             document.getElementById('mini-tracker-banner').classList.remove('hidden');
             document.getElementById('mini-tracker-text').innerText = `${active.length} Aktif Siparişiniz Var`;
-            // Eğer çekmece açıksa içeridekileri de canlı güncelle
             if (document.getElementById('tracker-drawer').classList.contains('active')) {
               renderTrackerContent(data.orders);
             }
@@ -364,43 +340,28 @@
       const container = document.getElementById('tracker-items-container');
 
       if (orderIds.length === 0) {
-        container.innerHTML = `
-          <div class="p-8 text-center text-slate-400 text-xs bg-slate-800/50 rounded-2xl border border-slate-800 space-y-2">
-            <i class="fa-solid fa-receipt text-2xl text-slate-600"></i>
-            <p>${currentTable} için aktif sipariş bulunmuyor.</p>
-          </div>`;
+        container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs">Aktif sipariş bulunmuyor.</div>`;
         return;
       }
 
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
 
-      if (myOrders.length === 0) {
-        container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Sipariş verileriniz yükleniyor...</div>';
-        return;
-      }
-
       container.innerHTML = myOrders.map(o => {
         const strId = String(o.id);
-        let rawStatus = String(o.status || localStatuses[strId] || 'WAITING').toUpperCase().trim();
+        let rawStatus = String(localStatuses[strId] || o.status || 'WAITING').toUpperCase().trim();
 
-        let activeStep = 0; 
-        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
-        let statusMsg = "⏳ Siparişiniz garson onayında, mutfağa iletiliyor...";
+        let activeStep = 0;
+        let statusMsg = "⏳ Siparişiniz garson onayında...";
 
-        const servedVariants = ['SERVED', 'SERVICED', 'DELIVERED', 'READY', 'COMPLETED', 'DONE', 'FINISHED', 'IN_SERVICE', 'KITCHEN_DONE', 'HAZIR', 'SERVIS_EDILDI'];
-
-        if (servedVariants.includes(rawStatus)) {
-          activeStep = 2; 
-          statusBg = "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-extrabold animate-pulse shadow-lg shadow-indigo-500/20";
-          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
-        } else if (rawStatus === 'PREPARING' || rawStatus === 'MUTFAK' || rawStatus === 'PISIRIYOR') {
+        if (rawStatus === 'SERVED') {
+          activeStep = 2;
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
+        } else if (rawStatus === 'PREPARING') {
           activeStep = 1;
-          statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
-          statusMsg = "🔥 Siparişiniz mutfakta fırına verildi, pişim aşamasında!";
-        } else if (rawStatus === 'PAID' || rawStatus === 'ODENDI') {
+          statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
+        } else if (rawStatus === 'PAID') {
           activeStep = 3;
-          statusBg = "bg-slate-700 border-slate-600 text-slate-300";
           statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
         }
 
@@ -409,40 +370,19 @@
             <div>
               <span class="font-extrabold text-slate-200">${i.title}</span>
               ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
-              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
             </div>
-            <span class="font-black text-white whitespace-nowrap">${i.price} ₺</span>
+            <span class="font-black text-white">${i.price} ₺</span>
           </div>
         `).join('');
 
         return `
-          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 space-y-3 shadow-lg">
-            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+          <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
               <span class="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 rounded-xl">Sipariş #${o.id}</span>
               <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
             </div>
             <div class="space-y-1.5">${itemsHtml}</div>
-            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/60 text-center">
-              <div class="flex flex-col items-center gap-0.5">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}">
-                  <i class="fa-solid fa-hourglass-half"></i>
-                </div>
-                <span class="text-[9px] ${activeStep === 0 ? 'text-amber-400 font-bold' : 'text-slate-400'}">Onay</span>
-              </div>
-              <div class="flex flex-col items-center gap-0.5">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 1 ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-700 text-slate-500'}">
-                  <i class="fa-solid fa-fire"></i>
-                </div>
-                <span class="text-[9px] ${activeStep === 1 ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Mutfak</span>
-              </div>
-              <div class="flex flex-col items-center gap-0.5">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black animate-bounce' : 'bg-slate-700 text-slate-500'}">
-                  <i class="fa-solid fa-utensils"></i>
-                </div>
-                <span class="text-[9px] ${activeStep >= 2 ? 'text-indigo-400 font-bold' : 'text-slate-400'}">Masada</span>
-              </div>
-            </div>
-            <div class="text-[11px] px-3 py-2 rounded-xl border font-bold ${statusBg} flex items-center justify-center text-center">
+            <div class="text-[11px] px-3 py-2 rounded-xl border font-bold bg-slate-900 text-slate-200 text-center">
               <span>${statusMsg}</span>
             </div>
           </div>
@@ -461,15 +401,15 @@
       const list = document.getElementById('product-list');
       const filtered = filter === 'all' ? catalog : catalog.filter(p => p.category === filter);
       list.innerHTML = filtered.map(p => `
-        <div class="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div class="bg-white rounded-3xl overflow-hidden border border-slate-200/85 shadow-sm flex flex-col justify-between">
           <div>
             <div class="h-40 w-full overflow-hidden relative">
               <img src="${p.image}" class="w-full h-full object-cover">
-              <span class="absolute top-3 right-3 bg-slate-900/85 backdrop-blur-md text-amber-400 font-extrabold text-xs px-3 py-1 rounded-xl">${p.basePrice} ₺</span>
+              <span class="absolute top-3 right-3 bg-slate-900/85 text-amber-400 font-extrabold text-xs px-3 py-1 rounded-xl">${p.basePrice} ₺</span>
             </div>
             <div class="p-4">
               <h3 class="font-black text-slate-900 text-base">${p.title}</h3>
-              <p class="text-xs text-slate-500 mt-1 line-clamp-2">${p.description}</p>
+              <p class="text-xs text-slate-500 mt-1">${p.description}</p>
             </div>
           </div>
           <div class="p-4 pt-0">
@@ -506,7 +446,7 @@
       if (selectedProduct.extras.length > 0) {
         extraSec.classList.remove('hidden');
         extrasCont.innerHTML = selectedProduct.extras.map(e => `
-          <label class="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs cursor-pointer">
+          <label class="flex items-center justify-between p-2.5 rounded-xl border bg-slate-50 text-xs cursor-pointer">
             <div class="flex items-center gap-2"><input type="checkbox" onchange="toggleExtra('${e.id}')" class="rounded text-red-600 w-4 h-4"><span class="font-medium text-slate-700">${e.name}</span></div>
             <span class="font-bold text-slate-900">+${e.price} ₺</span>
           </label>
@@ -537,7 +477,7 @@
       document.getElementById('modal-add-btn').onclick = () => { addToCart(total); closeOptionsModal(); };
     }
     function addToCart(totalPrice) {
-      cart.push({ id: Date.now(), title: selectedProduct.title, size: selectedSize ? selectedSize.name : null, extras: selectedExtras.map(e => e.name), note: document.getElementById('modal-note').value.trim(), price: totalPrice });
+      cart.push({ id: Date.now(), title: selectedProduct.title, size: selectedSize ? selectedSize.name : null, price: totalPrice, note: document.getElementById('modal-note').value.trim() });
       updateCartBar();
     }
     function updateCartBar() {
