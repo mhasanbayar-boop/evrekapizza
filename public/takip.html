@@ -16,14 +16,14 @@
     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
       <div class="flex items-center gap-2">
         <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-        <h1 class="text-base font-black" id="page-title">Masa Sipariş Takibi</h1>
+        <h1 class="text-base font-black" id="page-title">Canlı Sipariş Takibi</h1>
       </div>
-      <a href="/" class="bg-slate-800 hover:bg-slate-700 text-xs px-3.5 py-2 rounded-xl font-bold border border-slate-700 flex items-center gap-1.5 transition">
+      <a id="back-to-menu-btn" href="/" class="bg-slate-800 hover:bg-slate-700 text-xs px-3.5 py-2 rounded-xl font-bold border border-slate-700 flex items-center gap-1.5 transition">
         <i class="fa-solid fa-arrow-left"></i> Menüye Dön
       </a>
     </div>
 
-    <!-- ÇOKLU SİPARİŞ KARTLARI LİSTESİ -->
+    <!-- SİPARİŞ KARTLARI LİSTESİ -->
     <div id="orders-list-container" class="space-y-3">
       <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">
         Yükleniyor veya aktif sipariş bulunamadı...
@@ -32,19 +32,46 @@
   </div>
 
   <script>
-    const currentTable = localStorage.getItem('evreka_customer_table') || null;
+    let currentTable = null;
+
+    function parseAndFormatTable(raw) {
+      if (!raw) return null;
+      let cleaned = decodeURIComponent(raw).trim();
+      let match = cleaned.match(/\d+/);
+      if (match) {
+        let num = parseInt(match[0], 10);
+        if (num >= 1 && num <= 20) {
+          return `Masa ${num < 10 ? '0' + num : num}`;
+        }
+      }
+      return cleaned;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      let masaParam = urlParams.get('masa') || urlParams.get('table') || urlParams.get('m');
+
+      if (masaParam) {
+        currentTable = parseAndFormatTable(masaParam);
+        if (currentTable) localStorage.setItem('evreka_customer_table', currentTable);
+      } else {
+        currentTable = localStorage.getItem('evreka_customer_table') || null;
+      }
+
       if (!currentTable) {
         window.location.href = '/';
         return;
       }
+
       document.getElementById('page-title').innerText = `${currentTable} - Canlı Takip`;
+      document.getElementById('back-to-menu-btn').href = `/?masa=${encodeURIComponent(currentTable)}`;
+
       fetchAndRenderTracker();
-      setInterval(fetchAndRenderTracker, 1500);
+      setInterval(fetchAndRenderTracker, 1000);
     });
 
     function getTableOrderIds() {
+      if (!currentTable) return [];
       const list = localStorage.getItem(`evreka_orders_${currentTable}`);
       return list ? JSON.parse(list) : [];
     }
@@ -57,8 +84,8 @@
         container.innerHTML = `
           <div class="p-12 text-center text-slate-400 text-xs bg-slate-800/50 rounded-3xl border border-slate-800 space-y-3">
             <i class="fa-solid fa-receipt text-3xl text-slate-600"></i>
-            <p>Henüz aktif siparişiniz bulunmuyor.</p>
-            <a href="/" class="inline-block bg-red-600 text-white font-bold px-4 py-2 rounded-xl">Menüye Git & Sipariş Ver</a>
+            <p>Henüz bu masada aktif siparişiniz bulunmuyor.</p>
+            <a href="/?masa=${encodeURIComponent(currentTable)}" class="inline-block bg-red-600 text-white font-bold px-4 py-2 rounded-xl">Menüye Git & Sipariş Ver</a>
           </div>`;
         return;
       }
@@ -76,30 +103,32 @@
       const myOrders = allOrders.filter(o => orderIds.includes(String(o.id)));
 
       if (myOrders.length === 0) {
-        container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">Sipariş verileriniz yükleniyor...</div>';
+        container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">Sipariş verileriniz senkronize ediliyor...</div>';
         return;
       }
 
       container.innerHTML = myOrders.map(o => {
         const strId = String(o.id);
-        let status = (localStatuses[strId] || o.status || 'WAITING').toUpperCase();
-        if (status === 'WAITING_WAITER') status = 'WAITING';
-
-        const stepOrder = ['WAITING', 'PREPARING', 'SERVED', 'PAID'];
-        const activeIdx = Math.max(0, stepOrder.indexOf(status));
-
-        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
-        let statusMsg = "⏳ Garson onayında, hazırlanıyor...";
         
-        if (status === 'PREPARING') {
+        // Sunucu durumunu temizle ve standartlaştır
+        let rawStatus = String(o.status || localStatuses[strId] || 'WAITING').toUpperCase().trim();
+
+        let activeStep = 0; // 0: WAITING, 1: PREPARING, 2: SERVED, 3: PAID
+        let statusBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+        let statusMsg = "⏳ Siparişiniz garson onayında, mutfağa iletiliyor...";
+
+        if (rawStatus === 'PREPARING') {
+          activeStep = 1;
           statusBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
-          statusMsg = "🔥 Taş fırına verildi, pişiyor!";
-        } else if (status === 'SERVED') {
-          statusBg = "bg-indigo-500/10 border-indigo-500/30 text-indigo-400";
-          statusMsg = "🍽️ Masanıza servis edildi. Afiyet olsun!";
-        } else if (status === 'PAID') {
+          statusMsg = "🔥 Siparişiniz mutfakta fırına verildi, pişim aşamasında!";
+        } else if (rawStatus === 'SERVED' || rawStatus === 'SERVICED' || rawStatus === 'READY' || rawStatus === 'DELIVERED') {
+          activeStep = 2; // MASADA AŞAMASI (3. İKON)
+          statusBg = "bg-indigo-500/20 border-indigo-500/40 text-indigo-300 font-extrabold animate-pulse";
+          statusMsg = "🍽️ Siparişiniz masanıza servis edildi. Afiyet olsun!";
+        } else if (rawStatus === 'PAID') {
+          activeStep = 3;
           statusBg = "bg-slate-700 border-slate-600 text-slate-300";
-          statusMsg = "✅ Ödeme alındı, masa kapatıldı.";
+          statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
         }
 
         const itemsHtml = (o.items || []).map(i => `
@@ -107,9 +136,9 @@
             <div>
               <span class="font-extrabold text-slate-200">${i.title}</span>
               ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
-              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
+              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5"><i class="fa-solid fa-comment-dots"></i> Not: "${i.note}"</p>` : ''}
             </div>
-            <span class="font-black text-white">${i.price} ₺</span>
+            <span class="font-black text-white whitespace-nowrap">${i.price} ₺</span>
           </div>
         `).join('');
 
@@ -126,31 +155,31 @@
               ${itemsHtml}
             </div>
 
-            <!-- 3 AŞAMALI İKONİK İLERLEME ÇUBUĞU -->
+            <!-- 3 AŞAMALI ANLIK CANLI İKON BARI -->
             <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
               <div class="flex flex-col items-center gap-1">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 0 ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/40' : 'bg-slate-700 text-slate-500'}">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 0 ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/40' : 'bg-slate-700 text-slate-500'}">
                   <i class="fa-solid fa-hourglass-half"></i>
                 </div>
-                <span class="text-[10px] ${activeIdx === 0 ? 'text-amber-400 font-black' : 'text-slate-500'}">Onay</span>
+                <span class="text-[10px] ${activeStep === 0 ? 'text-amber-400 font-black' : 'text-slate-400'}">1. Onay</span>
               </div>
 
               <div class="flex flex-col items-center gap-1">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 1 ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/40' : 'bg-slate-700 text-slate-500'}">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 1 ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/40' : 'bg-slate-700 text-slate-500'}">
                   <i class="fa-solid fa-fire"></i>
                 </div>
-                <span class="text-[10px] ${activeIdx === 1 ? 'text-emerald-400 font-black' : 'text-slate-500'}">Mutfak</span>
+                <span class="text-[10px] ${activeStep === 1 ? 'text-emerald-400 font-black' : 'text-slate-400'}">2. Mutfak</span>
               </div>
 
               <div class="flex flex-col items-center gap-1">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${activeIdx >= 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/40' : 'bg-slate-700 text-slate-500'}">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs ${activeStep >= 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/50 animate-bounce' : 'bg-slate-700 text-slate-500'}">
                   <i class="fa-solid fa-utensils"></i>
                 </div>
-                <span class="text-[10px] ${activeIdx === 2 ? 'text-indigo-400 font-black' : 'text-slate-500'}">Masada</span>
+                <span class="text-[10px] ${activeStep >= 2 ? 'text-indigo-400 font-black' : 'text-slate-400'}">3. Masada</span>
               </div>
             </div>
 
-            <div class="text-xs px-3 py-2 rounded-2xl border font-extrabold ${statusBg} flex items-center justify-center text-center">
+            <div class="text-xs px-3 py-2.5 rounded-2xl border font-bold ${statusBg} flex items-center justify-center text-center">
               <span>${statusMsg}</span>
             </div>
           </div>
