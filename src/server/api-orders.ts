@@ -5,11 +5,14 @@ import path from 'path';
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
 
+// Statik frontend dosyalarını dışa aç (public klasörü kök dizinde olmalı)
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Admin şifre hash'i (1234)
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update('1234').digest('hex');
 
-// Dosya tabanlı kalıcılık (Railway yeniden başlasa bile ciro ve siparişler silinmez)
+// Kök dizinde orders.json kullanarak ciro ve siparişlerin asla sıfırlanmamasını sağla
 const DATA_FILE = path.join(process.cwd(), 'orders.json');
 
 function loadOrders() {
@@ -34,6 +37,7 @@ function saveOrders(orders: any) {
 
 let ordersDb = loadOrders();
 
+// ==================== AUTH ====================
 app.post('/api/auth/login', (req: any, res: any) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Şifre gereklidir.' });
@@ -47,6 +51,7 @@ app.post('/api/auth/login', (req: any, res: any) => {
   return res.status(401).json({ error: 'Geçersiz yönetici şifresi!' });
 });
 
+// ==================== ORDERS API ====================
 app.post('/api/orders', (req: any, res: any) => {
   const { tableName, items, totalPrice } = req.body;
 
@@ -57,7 +62,7 @@ app.post('/api/orders', (req: any, res: any) => {
   const newOrder = {
     id: 'EVR-' + Math.floor(100000 + Math.random() * 900000),
     tableName,
-    status: 'WAITING_WAITER',
+    status: 'WAITING_WAITER', // WAITING_WAITER -> PREPARING -> SERVED -> PAID
     items,
     totalPrice,
     createdAt: new Date().toISOString()
@@ -72,6 +77,7 @@ app.get('/api/orders', (req: any, res: any) => {
   return res.json({ success: true, orders: ordersDb });
 });
 
+// Mutfağa Gönder
 app.patch('/api/orders/:id/approve', (req: any, res: any) => {
   const { id } = req.params;
   const order = ordersDb.find((o: any) => o.id === id);
@@ -85,6 +91,7 @@ app.patch('/api/orders/:id/approve', (req: any, res: any) => {
   return res.json({ success: true, order });
 });
 
+// Masaya Servis Edildi (3. Aşama - Mor Yanma Garantili)
 app.patch('/api/orders/:id/serve', (req: any, res: any) => {
   const { id } = req.params;
   const order = ordersDb.find((o: any) => o.id === id);
@@ -98,6 +105,7 @@ app.patch('/api/orders/:id/serve', (req: any, res: any) => {
   return res.json({ success: true, order });
 });
 
+// Ödeme Alındı
 app.patch('/api/orders/:id/pay', (req: any, res: any) => {
   const { id } = req.params;
   const order = ordersDb.find((o: any) => o.id === id);
@@ -111,6 +119,7 @@ app.patch('/api/orders/:id/pay', (req: any, res: any) => {
   return res.json({ success: true, order });
 });
 
+// Genel Durum Güncelleme
 app.patch('/api/orders/:id/status', (req: any, res: any) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -141,5 +150,5 @@ app.delete('/api/orders/:id', (req: any, res: any) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`Evreka Pizza API ${PORT} portunda çalışıyor.`);
+  console.log(`Evreka Pizza API ${PORT} portunda başarıyla çalışıyor.`);
 });
