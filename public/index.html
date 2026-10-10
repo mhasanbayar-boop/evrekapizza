@@ -89,10 +89,11 @@
 
     <!-- Kategori Filtreleri -->
     <div class="px-4 overflow-x-auto no-scrollbar flex gap-2 py-1 sticky top-[65px] z-20 bg-slate-100/90 backdrop-blur-md">
-      <button onclick="filterCategory('all')" class="px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap">Tüm Menü</button>
-      <button onclick="filterCategory('pizza')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Pizzalar</button>
-      <button onclick="filterCategory('side')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Atıştırmalıklar</button>
-      <button onclick="filterCategory('beverage')" class="px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">İçecekler</button>
+      <button onclick="filterCategory('all', this)" class="cat-btn px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap transition">Tüm Menü</button>
+      <button onclick="filterCategory('pizza', this)" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition">Pizzalar</button>
+      <button onclick="filterCategory('side', this)" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition">Atıştırmalıklar</button>
+      <button onclick="filterCategory('beverage', this)" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition">İçecekler</button>
+      <button onclick="filterCategory('dessert', this)" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition">Tatlılar</button>
     </div>
 
     <div class="px-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" id="product-list"></div>
@@ -218,15 +219,62 @@
   </div>
 
   <script>
+    // Zenginleştirilmiş Geniş Menü Katalogu
     const catalog = [
       {
         id: 'piz-01', category: 'pizza', title: 'Evreka Special Pizza', description: 'Özel mozarella peyniri, dana sucuk, mantar, mısır, zeytin.', basePrice: 280,
         image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
         sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük', priceOffset: 120 }],
+        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }, { id: 'ex-mush', name: 'Ekstra Mantar', price: 25 }]
+      },
+      {
+        id: 'piz-02', category: 'pizza', title: 'Pepperoni Lover Pizza', description: 'Bol İtalyan dilimli pepperoni sucuk ve ekstra mozarella.', basePrice: 295,
+        image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80',
+        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 65 }, { id: 'sz-l', name: 'Büyük', priceOffset: 130 }],
         extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
-      { id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
+      {
+        id: 'piz-03', category: 'pizza', title: 'Margarita Classic', description: 'Özel domates sosu, taze fesleğen yaprakları ve bol mozarella.', basePrice: 240,
+        image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=80',
+        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 50 }, { id: 'sz-l', name: 'Büyük', priceOffset: 100 }],
+        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
+      },
+      {
+        id: 'piz-04', category: 'pizza', title: 'Barbekü Tavuklu Pizza', description: 'Barbekü soslu izgara tavuk parçaları, mantar ve kırmızı soğan.', basePrice: 275,
+        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+        sizes: [{ id: 'sz-s', name: 'Küçük', priceOffset: 0 }, { id: 'sz-m', name: 'Orta', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük', priceOffset: 120 }],
+        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
+      },
+      {
+        id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85,
+        image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      },
+      {
+        id: 'sd-02', category: 'side', title: 'Sarımsaklı Ekmek & Peynir', description: 'Fırınlanmış çıtır ekmek dilimleri ve eritilmiş peynir.', basePrice: 95,
+        image: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      },
+      {
+        id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45,
+        image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      },
+      {
+        id: 'bev-02', category: 'beverage', title: 'Ayran (300ml)', description: 'Geleneksel yayık ayranı.', basePrice: 35,
+        image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      },
+      {
+        id: 'bev-03', category: 'beverage', title: 'Limonata (Ev Yapımı)', description: 'Taze nane yaprakları ile taze sıkım.', basePrice: 55,
+        image: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      },
+      {
+        id: 'des-01', category: 'dessert', title: 'Sıcak Çikolatalı Sufle', description: 'İçi akışkan özel Belçika çikolatalı sufle.', basePrice: 110,
+        image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
+        sizes: [], extras: []
+      }
     ];
 
     let currentTable = null;
@@ -351,19 +399,10 @@
         const strId = String(o.id);
         let rawStatus = String(localStatuses[strId] || o.status || 'WAITING').toUpperCase().trim();
 
-        let activeStep = 0;
         let statusMsg = "⏳ Siparişiniz garson onayında...";
-
-        if (rawStatus === 'SERVED') {
-          activeStep = 2;
-          statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
-        } else if (rawStatus === 'PREPARING') {
-          activeStep = 1;
-          statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
-        } else if (rawStatus === 'PAID') {
-          activeStep = 3;
-          statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
-        }
+        if (rawStatus === 'SERVED') statusMsg = "🍽️ Siparişiniz masanıza servis edildi!";
+        else if (rawStatus === 'PREPARING') statusMsg = "🔥 Siparişiniz mutfakta hazırlanıyor!";
+        else if (rawStatus === 'PAID') statusMsg = "✅ Ödemeniz alındı. Teşekkür ederiz!";
 
         const itemsHtml = (o.items || []).map(i => `
           <div class="flex justify-between items-center text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
@@ -395,7 +434,17 @@
       toggleTrackerDrawer();
     }
 
-    function filterCategory(cat) { renderProducts(cat); }
+    // Kategori Seçim ve Aktif Buton Görünüm Yönetimi
+    function filterCategory(cat, btnElement) {
+      // Tüm butonların stillerini sıfırla (Beyaz arkaplan)
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.className = "cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap transition";
+      });
+      // Tıklanan butona siyah/koyu arka planı ver
+      btnElement.className = "cat-btn px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap transition";
+      
+      renderProducts(cat);
+    }
 
     function renderProducts(filter) {
       const list = document.getElementById('product-list');
