@@ -218,8 +218,7 @@
         sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 50 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 90 }],
         extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
-      {
-        id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
+      { id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
       { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
       { id: 'des-01', category: 'dessert', title: 'Sıcak Çikolatalı Sufle', description: 'Akışkan Belçika çikolatalı nefis sufle.', basePrice: 125, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
     ];
@@ -493,7 +492,7 @@
       }
     }
 
-    // CANLI SİPARİŞ TAKİP SİSTEMİ (Müşteri Teslim Edildi aşamasını anlık görür)
+    // CANLI SİPARİŞ TAKİP SİSTEMİ (Teslim Durumunu Anında Yakalar)
     function startOrderTracking(orderId) {
       const trackerBar = document.getElementById('order-tracker-bar');
       const badge = document.getElementById('tracker-status-badge');
@@ -505,8 +504,20 @@
         try {
           const res = await fetch('/api/orders');
           const data = await res.json();
+          
+          // Yerel hafızadaki durum güncellemelerini çek
+          const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+          
           if (data.success) {
-            const myOrder = (data.orders || []).find(o => String(o.id) === String(orderId));
+            let myOrder = (data.orders || []).find(o => String(o.id) === String(orderId));
+            
+            // Eğer backend restart attıysa yerel hafızadan siparişi kontrol et
+            if (!myOrder && localStatuses[orderId]) {
+              myOrder = { id: orderId, status: localStatuses[orderId] };
+            } else if (myOrder && localStatuses[orderId]) {
+              myOrder.status = localStatuses[orderId];
+            }
+
             if (myOrder) {
               if (myOrder.status === 'WAITING' || myOrder.status === 'WAITING_WAITER') {
                 badge.className = "bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
@@ -515,7 +526,6 @@
                 badge.className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
                 badge.innerHTML = '<i class="fa-solid fa-fire animate-bounce"></i> Mutfakta Hazırlanıyor';
               } else if (myOrder.status === 'SERVED') {
-                // MÜŞTERİNİN GÖRECEĞİ TESLİM EDİLDİ / MASAYA GETİRİLDİ AŞAMASI
                 badge.className = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
                 badge.innerHTML = '<i class="fa-solid fa-utensils"></i> Masanıza Servis Edildi (Afiyet Olsun!)';
               } else if (myOrder.status === 'PAID') {
