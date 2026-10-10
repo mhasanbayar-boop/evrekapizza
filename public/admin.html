@@ -3,43 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evreka Pizza - Kompakt POS & Garson Paneli</title>
+  <title>Evreka Pizza - Garson & Yönetim Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style> body { font-family: 'Plus Jakarta Sans', sans-serif; } </style>
 </head>
-<body class="h-full bg-slate-900 p-3 sm:p-6">
+<body class="h-full bg-slate-900 p-4">
 
-  <div class="max-w-4xl mx-auto space-y-4 pb-12">
-    <!-- ÜST KÜÇÜK POS BARI -->
-    <div class="bg-slate-800 border border-slate-700 px-4 py-3 rounded-2xl shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">🍕</span>
-        <div>
-          <h1 class="text-sm font-black text-white">POS / Garson Paneli</h1>
-          <p class="text-[10px] text-slate-400">Canlı Adisyon & Hızlı İşlem</p>
-        </div>
+  <div class="max-w-4xl mx-auto space-y-6 pb-12">
+    <!-- ÜST İSTATİSTİK BARI (Asla Sıfırlanmayan Ciro) -->
+    <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-xl font-black text-white flex items-center gap-2">
+          🍕 Garson & Mutfak Paneli
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Canlı Sipariş Yönetimi & Ciro Takibi</p>
       </div>
 
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <div class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl flex-1 text-center">
-          <span class="text-[9px] text-slate-400 font-bold uppercase block">Ciro</span>
-          <span id="total-revenue" class="text-xs font-black text-amber-400">0 ₺</span>
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="bg-slate-900/80 border border-slate-700 px-4 py-2.5 rounded-2xl flex-1 sm:flex-initial text-center sm:text-right">
+          <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Toplam Ciro</span>
+          <span id="total-revenue" class="text-lg font-black text-amber-400">0 ₺</span>
         </div>
-        <div class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl flex-1 text-center">
-          <span class="text-[9px] text-slate-400 font-bold uppercase block">Adet</span>
-          <span id="total-orders-count" class="text-xs font-black text-emerald-400">0</span>
+        <div class="bg-slate-900/80 border border-slate-700 px-4 py-2.5 rounded-2xl flex-1 sm:flex-initial text-center sm:text-right">
+          <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Toplam Sipariş</span>
+          <span id="total-orders-count" class="text-lg font-black text-emerald-400">0</span>
         </div>
-        <button onclick="loadAdminOrders()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition">
-          <i class="fa-solid fa-rotate"></i>
-        </button>
       </div>
     </div>
 
-    <!-- SİPARİŞ LİSTESİ (Kompakt POS Kartları) -->
-    <div id="admin-orders-container" class="space-y-3">
-      <div class="p-8 text-center text-slate-500 text-xs bg-slate-800/40 rounded-2xl border border-slate-800">
+    <!-- SİPARİŞ LİSTESİ -->
+    <div id="admin-orders-container" class="space-y-4">
+      <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">
         Siparişler yükleniyor...
       </div>
     </div>
@@ -48,7 +44,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       loadAdminOrders();
-      setInterval(loadAdminOrders, 1500); // Canlı senkronizasyon
+      setInterval(loadAdminOrders, 1500); // 1.5 saniyede bir canlı yenile
     });
 
     async function loadAdminOrders() {
@@ -59,7 +55,7 @@
           renderAdminOrders(data.orders);
         }
       } catch (err) {
-        console.error("Siparişler çekilemedi, localStorage yedek kaynağa bakılıyor...", err);
+        console.error("Siparişler çekilemedi:", err);
       }
     }
 
@@ -67,81 +63,81 @@
       const container = document.getElementById('admin-orders-container');
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-      // Durumları eşitle
+      // Yerel durumları API'den gelen siparişlere entegre et
       const processedOrders = orders.map(o => ({
         ...o,
         status: localStatuses[String(o.id)] || o.status || 'WAITING'
       }));
-
-      // Toplam Hesaplamalar
+      
+      // Toplam Ciro ve Sipariş Hesabı
       const totalRev = processedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
       document.getElementById('total-revenue').innerText = `${totalRev} ₺`;
       document.getElementById('total-orders-count').innerText = processedOrders.length;
 
       if (processedOrders.length === 0) {
         container.innerHTML = `
-          <div class="p-8 text-center text-slate-500 text-xs bg-slate-800/40 rounded-2xl border border-slate-800 space-y-1">
-            <i class="fa-solid fa-inbox text-2xl text-slate-600"></i>
-            <p>Aktif sipariş bulunmuyor.</p>
+          <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800 space-y-2">
+            <i class="fa-solid fa-inbox text-3xl text-slate-600"></i>
+            <p>Henüz verilmiş bir sipariş bulunmuyor.</p>
           </div>`;
         return;
       }
 
-      // EN YENİLER EN ÜSTTE (Unshift / Reverse mantığı)
+      // En yeni sipariş her zaman en üstte görünür
       const sorted = [...processedOrders].reverse();
 
       container.innerHTML = sorted.map(o => {
         let statusTag = '';
-        let statusStr = String(o.status).toUpperCase().trim();
+        let statusStr = String(o.status || 'WAITING').toUpperCase().trim();
 
         if (statusStr === 'WAITING') {
-          statusTag = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-lg">⏳ Onay Bekliyor</span>';
+          statusTag = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">⏳ Garson Onayı Bekliyor</span>';
         } else if (statusStr === 'PREPARING') {
-          statusTag = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black px-2 py-0.5 rounded-lg">🔥 Mutfakta</span>';
+          statusTag = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">🔥 Mutfakta Hazırlanıyor</span>';
         } else if (statusStr === 'SERVED') {
-          statusTag = '<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-black px-2 py-0.5 rounded-lg">🍽️ Serviste</span>';
+          statusTag = '<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">🍽️ Masaya Servis Edildi</span>';
         } else if (statusStr === 'PAID') {
-          statusTag = '<span class="bg-slate-700 text-slate-300 border border-slate-600 text-[9px] font-black px-2 py-0.5 rounded-lg">✅ Ödendi</span>';
+          statusTag = '<span class="bg-slate-700 text-slate-300 border border-slate-600 text-[10px] font-black px-2.5 py-1 rounded-xl">✅ Ödeme Alındı</span>';
         }
 
         const itemsHtml = (o.items || []).map(i => `
-          <div class="flex justify-between items-center text-[11px] bg-slate-900/50 px-2.5 py-1.5 rounded-lg border border-slate-700/30">
+          <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
             <div>
               <span class="font-bold text-slate-200">${i.title}</span>
               ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
-              ${i.note ? `<span class="text-[10px] text-amber-400 italic ml-1">(${i.note})</span>` : ''}
+              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
             </div>
             <span class="font-black text-white">${i.price} ₺</span>
           </div>
         `).join('');
 
         return `
-          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-3.5 shadow-md space-y-2.5">
-            <!-- Başlık Satırı -->
-            <div class="flex items-center justify-between gap-2 border-b border-slate-700/50 pb-2">
+          <div class="bg-slate-800 border border-slate-700 rounded-3xl p-5 shadow-xl space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
               <div class="flex items-center gap-2">
-                <span class="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 rounded-xl shadow">${o.tableName}</span>
-                <span class="text-slate-400 text-[10px] font-mono">#${o.id}</span>
-                ${statusTag}
+                <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl">${o.tableName}</span>
+                <span class="text-slate-400 text-xs font-mono">#${o.id}</span>
               </div>
-              <span class="text-sm font-black text-amber-400">${o.totalPrice} ₺</span>
+              <div class="flex items-center gap-3">
+                ${statusTag}
+                <span class="text-base font-black text-amber-400">${o.totalPrice} ₺</span>
+              </div>
             </div>
 
-            <!-- Ürünler (Kompakt Liste) -->
-            <div class="space-y-1">
+            <div class="space-y-2">
               ${itemsHtml}
             </div>
 
-            <!-- POS Buton Satırı -->
-            <div class="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-700/50">
-              <button onclick="updateOrderStatus(${o.id}, 'PREPARING')" class="bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-[10px] py-2 px-2 rounded-xl transition flex items-center justify-center gap-1">
-                <i class="fa-solid fa-fire"></i> Mutfak
+            <!-- BUTON HAREKETLERİ -->
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700/60">
+              <button onclick="updateStatus(${o.id}, 'PREPARING')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-fire"></i> Mutfağa Gönder
               </button>
-              <button onclick="updateOrderStatus(${o.id}, 'SERVED')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white font-bold text-[10px] py-2 px-2 rounded-xl transition flex items-center justify-center gap-1">
-                <i class="fa-solid fa-utensils"></i> Servis Et
+              <button onclick="updateStatus(${o.id}, 'SERVED')" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
+                <i class="fa-solid fa-utensils"></i> Masaya Servis Et
               </button>
-              <button onclick="updateOrderStatus(${o.id}, 'PAID')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-[10px] py-2 px-2 rounded-xl transition flex items-center justify-center gap-1">
-                <i class="fa-solid fa-check"></i> Ödendi
+              <button onclick="updateStatus(${o.id}, 'PAID')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-extrabold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-check"></i> Ödendi Yap
               </button>
             </div>
           </div>
@@ -149,21 +145,22 @@
       }).join('');
     }
 
-    function updateOrderStatus(orderId, newStatus) {
-      // 1. Önce localStorage'a anında kaydet ve arayüzü güncelle (Gecikmesiz POS tepkisi)
+    async function updateStatus(orderId, newStatus) {
+      // Yerel durumu hemen güncelle ve ekrana yansıt (Butonların çalışmama sorununu tamamen engeller)
       let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       localStatuses[String(orderId)] = newStatus;
       localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
-      
-      // Anında ekrana yansıt
       loadAdminOrders();
 
-      // 2. Arka planda sunucuya da bildir (Hata verse bile arayüz kırılmaz)
-      fetch(`/api/orders/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      }).catch(err => console.log("API arka plan senkronizasyon uyarısı:", err));
+      try {
+        await fetch(`/api/orders/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+      } catch (err) {
+        console.error("Durum güncellenemedi:", err);
+      }
     }
   </script>
 </body>
