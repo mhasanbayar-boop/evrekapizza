@@ -11,8 +11,29 @@
 </head>
 <body class="h-full bg-slate-900 p-4">
 
-  <div class="max-w-4xl mx-auto space-y-6 pb-12">
-    <!-- ÜST İSTATİSTİK BARI (Asla Sıfırlanmayan Ciro) -->
+  <!-- ŞİFRE GİRİŞ EKRANI -->
+  <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+    <div class="max-w-sm w-full bg-slate-900 border border-slate-800 p-8 rounded-3xl space-y-6 shadow-2xl text-center">
+      <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black border border-red-500/30">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-black text-white">Yetkili Girişi</h2>
+        <p class="text-xs text-slate-400 mt-1">Garson ve yönetim paneli için şifre giriniz.</p>
+      </div>
+      <div class="space-y-3">
+        <input type="password" id="password-input" maxlength="4" placeholder="••••" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-center text-xl font-black tracking-widest text-amber-400 focus:ring-2 focus:ring-red-500 focus:outline-none" />
+        <button onclick="checkPassword()" class="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-red-600/30">
+          Giriş Yap
+        </button>
+        <p id="error-msg" class="text-xs text-red-500 font-bold hidden">Hatalı şifre! (İpucu: 1234)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANA PANEL (Şifre girilmeden gizlidir) -->
+  <div id="admin-main-panel" class="max-w-4xl mx-auto space-y-6 pb-12 hidden">
+    <!-- ÜST İSTATİSTİK BARI -->
     <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
       <div>
         <h1 class="text-xl font-black text-white flex items-center gap-2">
@@ -43,9 +64,28 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Daha önceden giriş yapıldıysa direkt paneli aç
+      if (localStorage.getItem('evreka_admin_logged') === 'true') {
+        unlockPanel();
+      }
+    });
+
+    function checkPassword() {
+      const pass = document.getElementById('password-input').value;
+      if (pass === '1234') {
+        localStorage.setItem('evreka_admin_logged', 'true');
+        unlockPanel();
+      } else {
+        document.getElementById('error-msg').classList.remove('hidden');
+      }
+    }
+
+    function unlockPanel() {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('admin-main-panel').classList.remove('hidden');
       loadAdminOrders();
       setInterval(loadAdminOrders, 1500); // 1.5 saniyede bir canlı yenile
-    });
+    }
 
     async function loadAdminOrders() {
       try {
@@ -63,13 +103,11 @@
       const container = document.getElementById('admin-orders-container');
       const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
 
-      // Yerel durumları API'den gelen siparişlere entegre et
       const processedOrders = orders.map(o => ({
         ...o,
         status: localStatuses[String(o.id)] || o.status || 'WAITING'
       }));
       
-      // Toplam Ciro ve Sipariş Hesabı
       const totalRev = processedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
       document.getElementById('total-revenue').innerText = `${totalRev} ₺`;
       document.getElementById('total-orders-count').innerText = processedOrders.length;
@@ -83,7 +121,6 @@
         return;
       }
 
-      // En yeni sipariş her zaman en üstte görünür
       const sorted = [...processedOrders].reverse();
 
       container.innerHTML = sorted.map(o => {
@@ -128,7 +165,6 @@
               ${itemsHtml}
             </div>
 
-            <!-- BUTON HAREKETLERİ -->
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700/60">
               <button onclick="updateStatus(${o.id}, 'PREPARING')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-fire"></i> Mutfağa Gönder
@@ -146,7 +182,6 @@
     }
 
     async function updateStatus(orderId, newStatus) {
-      // Yerel durumu hemen güncelle ve ekrana yansıt (Butonların çalışmama sorununu tamamen engeller)
       let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
       localStatuses[String(orderId)] = newStatus;
       localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
