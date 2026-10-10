@@ -1,18 +1,24 @@
 {
-  "name": "evreka-pizza",
-  "version": "1.0.0",
-  "description": "Evreka Pizza QR Menu & Order System",
-  "main": "dist/server/api-orders.js",
+  "name": "qr-siparis-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "QR siparis sistemi - Faz 0 cekirdek moduller: durum makinesi, fiyat hesabi, QR token, POS adapter iskeleti",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server/api-orders.js"
+    "start": "npx tsx src/server/api-orders.ts",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.18"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": ">=22",
+    "tsx": "^4.19.0",
+    "typescript": ">=5.8"
   }
 }
