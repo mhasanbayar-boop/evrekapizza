@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evreka Pizza - Admin & POS Paneli</title>
+  <title>Evreka Pizza - Garson & Yönetim Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,556 +11,152 @@
 </head>
 <body class="h-full bg-slate-900 p-4">
 
-  <!-- SAĞ ÜST TOAST BİLDİRİM ALANI -->
-  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
-
-  <!-- ŞİFRELİ GİRİŞ EKRANI -->
-  <div id="login-screen" class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl text-center space-y-4 hidden">
-    <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">🔐</div>
-    <h2 class="text-xl font-black">Garson / Admin Girişi</h2>
-    <p class="text-xs text-slate-400">Yönetim paneline hoş geldiniz.</p>
-    <input type="password" id="pass-input" placeholder="Yönetici Şifreniz (Varsayılan: 1234)" class="w-full text-center bg-slate-900 border border-slate-700 rounded-2xl py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-red-500">
-    <button onclick="loginServer()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-2xl text-xs transition">Giriş Yap</button>
-  </div>
-
-  <!-- CANLI DASHBOARD -->
-  <div id="dashboard" class="max-w-5xl mx-auto hidden space-y-5 pb-12">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+  <div class="max-w-4xl mx-auto space-y-6 pb-12">
+    <!-- ÜST İSTATİSTİK BARI (Asla Sıfırlanmayan Ciro) -->
+    <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
       <div>
-        <h1 class="text-xl font-black flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span> Canlı POS & Mutfak Paneli
+        <h1 class="text-xl font-black text-white flex items-center gap-2">
+          🍕 Garson & Mutak Paneli
         </h1>
-        <p class="text-xs text-slate-400 mt-0.5">Sipariş Hazırlama, Masaya Servis ve Bulut Senkronize Ciro Takibi</p>
+        <p class="text-xs text-slate-400 mt-0.5">Canlı Sipariş Yönetimi & Ciro Takibi</p>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
-        <button onclick="playNotificationSound()" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-black text-xs px-3 py-2 rounded-xl border border-amber-500/30 font-bold flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-volume-high"></i> Ses Testi
-        </button>
-        <button onclick="fetchOrdersFromServer()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl border border-slate-700 font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-rotate"></i> Yenile
-        </button>
-        <button onclick="logout()" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white text-xs px-3 py-2 rounded-xl border border-red-500/30 font-bold">
-          Çıkış
-        </button>
-      </div>
-    </div>
 
-    <!-- İSTATİSTİK BARI -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
-        <span class="text-slate-400 font-bold block mb-1">Toplam Ciro (Tümü)</span>
-        <span class="text-lg font-black text-emerald-400" id="stat-ciro">0 ₺</span>
-      </div>
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
-        <span class="text-slate-400 font-bold block mb-1">Onay Bekleyen</span>
-        <span class="text-lg font-black text-amber-400" id="stat-bekleyen">0</span>
-      </div>
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
-        <span class="text-slate-400 font-bold block mb-1">Mutfakta</span>
-        <span class="text-lg font-black text-emerald-400" id="stat-mutfakta">0</span>
-      </div>
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
-        <span class="text-slate-400 font-bold block mb-1">Ödeme Bekleyen</span>
-        <span class="text-lg font-black text-indigo-400" id="stat-servis">0</span>
-      </div>
-    </div>
-
-    <!-- 📊 GÜNLÜK & AYLIK FİNANSAL RAPOR KARTI -->
-    <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-3xl shadow-xl space-y-3">
-      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-        <h3 class="text-sm font-black text-white flex items-center gap-2">
-          <i class="fa-solid fa-chart-line text-emerald-400"></i> Günlük & Aylık Finansal Takip
-        </h3>
-        <span class="text-[10px] text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg font-bold border border-slate-700">Bulut Veritabanı</span>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-        <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700/50 flex items-center justify-between">
-          <div>
-            <span class="text-slate-400 font-bold block">Bugünkü Ciro (Gün Sonu)</span>
-            <span class="text-[10px] text-slate-500 mt-0.5 block">Bugün tahsil edilen toplam tutar</span>
-          </div>
-          <span class="text-base font-black text-amber-400" id="report-daily-ciro">0 ₺</span>
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="bg-slate-900/80 border border-slate-700 px-4 py-2.5 rounded-2xl flex-1 sm:flex-initial text-center sm:text-right">
+          <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Toplam Ciro</span>
+          <span id="total-revenue" class="text-lg font-black text-amber-400">0 ₺</span>
         </div>
-        <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700/50 flex items-center justify-between">
-          <div>
-            <span class="text-slate-400 font-bold block">Bu Ayki Ciro (Aylık Rapor)</span>
-            <span class="text-[10px] text-slate-500 mt-0.5 block">Bu ay tahsil edilen toplam tutar</span>
-          </div>
-          <span class="text-base font-black text-emerald-400" id="report-monthly-ciro">0 ₺</span>
+        <div class="bg-slate-900/80 border border-slate-700 px-4 py-2.5 rounded-2xl flex-1 sm:flex-initial text-center sm:text-right">
+          <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Toplam Sipariş</span>
+          <span id="total-orders-count" class="text-lg font-black text-emerald-400">0</span>
         </div>
       </div>
     </div>
 
-    <!-- Durum Filtreleme Tabları -->
-    <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
-      <button onclick="setFilter('ALL')" id="filter-ALL" class="px-4 py-2 rounded-xl font-extrabold bg-red-600 text-white">Aktif Siparişler (<span id="count-ALL">0</span>)</button>
-      <button onclick="setFilter('WAITING')" id="filter-WAITING" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-amber-400 border border-slate-700">Yeni Gelenler (<span id="count-WAITING">0</span>)</button>
-      <button onclick="setFilter('PREPARING')" id="filter-PREPARING" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-emerald-400 border border-slate-700">Mutfakta (<span id="count-PREPARING">0</span>)</button>
-      <button onclick="setFilter('SERVED')" id="filter-SERVED" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-indigo-400 border border-slate-700">Ödeme Bekleyenler (<span id="count-SERVED">0</span>)</button>
-      <button onclick="setFilter('PAID')" id="filter-PAID" class="px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700">Tamamlananlar (<span id="count-PAID">0</span>)</button>
-    </div>
-
-    <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-  </div>
-
-  <!-- ÖDEME ALMA MODALI -->
-  <div id="payment-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <div>
-          <h3 class="text-lg font-black text-white" id="pay-modal-table">Masa - Ödeme Al</h3>
-          <p class="text-xs text-slate-400" id="pay-modal-id">Sipariş #000</p>
-        </div>
-        <button onclick="closePaymentModal()" class="w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center hover:bg-slate-600">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700/60 text-center">
-        <span class="text-xs text-slate-400 font-bold uppercase block">Tahsil Edilecek Tutar</span>
-        <span class="text-3xl font-black text-emerald-400 mt-1 block" id="pay-modal-amount">0 ₺</span>
-      </div>
-
-      <div class="space-y-3">
-        <label class="block text-xs font-bold text-slate-400 uppercase">Ödeme Yöntemini Seçin</label>
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="selectPaymentType('Kredi Kartı')" id="btn-pay-card" class="p-4 rounded-2xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
-            <i class="fa-solid fa-credit-card text-2xl"></i> Kredi Kartı (POS)
-          </button>
-          <button onclick="selectPaymentType('Nakit')" id="btn-pay-cash" class="p-4 rounded-2xl border border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-extrabold text-xs flex flex-col items-center gap-2 transition">
-            <i class="fa-solid fa-money-bill-wave text-2xl"></i> Nakit Ödeme
-          </button>
-        </div>
-      </div>
-
-      <div id="pos-status-area" class="hidden bg-slate-900/90 p-3 rounded-xl border border-slate-700 text-center text-xs space-y-1">
-        <span class="text-amber-400 font-bold animate-pulse block" id="pos-status-text">POS Cihazına İstek Gönderiliyor...</span>
-        <span class="text-[10px] text-slate-400 block">Lütfen kartı okutunuz veya şifre giriniz.</span>
-      </div>
-
-      <button id="confirm-pay-btn" onclick="processPayment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-900/40 transition">
-        Ödemeyi Onayla ve Masayı Kapat
-      </button>
-    </div>
-  </div>
-
-  <!-- İPTAL ONAY MODALI -->
-  <div id="cancel-confirm-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4">
-      <div class="w-14 h-14 bg-red-600/20 text-red-400 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-red-500/30">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-      </div>
-      <div>
-        <h3 class="text-lg font-black text-white">Siparişi İptal Et</h3>
-        <p class="text-xs text-slate-400 mt-1">Bu siparişi iptal etmek istediğinize emin misiniz?</p>
-      </div>
-      <div class="grid grid-cols-2 gap-2 pt-2">
-        <button onclick="closeCancelModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl text-xs transition">Vazgeç</button>
-        <button id="confirm-cancel-btn" class="bg-red-600 hover:bg-red-500 text-white font-extrabold py-3 rounded-2xl text-xs transition shadow-lg shadow-red-900/40">Evet, İptal Et</button>
+    <!-- SİPARİŞ LİSTESİ -->
+    <div id="admin-orders-container" class="space-y-4">
+      <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">
+        Siparişler yükleniyor...
       </div>
     </div>
   </div>
 
   <script>
-    let currentFilter = 'ALL';
-    let cachedOrders = [];
-    let previousOrderCount = 0;
-    let selectedOrderForPay = null;
-    let selectedPaymentMethod = 'Kredi Kartı';
-    let pendingCancelOrderId = null;
-
     document.addEventListener('DOMContentLoaded', () => {
-      const isLogged = sessionStorage.getItem('evreka_admin_logged');
-      if (isLogged === 'true') {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        fetchOrdersFromServer();
-        setInterval(fetchOrdersFromServer, 2000);
-      } else {
-        document.getElementById('login-screen').classList.remove('hidden');
-      }
+      loadAdminOrders();
+      setInterval(loadAdminOrders, 1500); // 1.5 saniyede bir canlı yenile
     });
 
-    function showToast(message, type = 'success') {
-      const cont = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `pointer-events-auto p-3.5 rounded-2xl border shadow-xl flex items-center gap-2.5 text-xs font-bold transition-all transform translate-x-full duration-300 ${
-        type === 'success' ? 'bg-slate-800 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 border-red-500/50 text-red-400'
-      }`;
-      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-xmark text-red-400'} text-base"></i> <span>${message}</span>`;
-      cont.appendChild(toast);
-      
-      setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-      setTimeout(() => {
-        toast.classList.add('translate-x-full', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    function playNotificationSound() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function createTone(freq, startTime, duration) {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
-          gain.gain.setValueAtTime(0.3, audioCtx.currentTime + startTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(audioCtx.currentTime + startTime);
-          osc.stop(audioCtx.currentTime + startTime + duration);
-        }
-        createTone(880, 0, 0.15);
-        createTone(1174.66, 0.18, 0.3);
-      } catch (e) {}
-    }
-
-    async function loginServer() {
-      const pass = document.getElementById('pass-input').value;
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: pass })
-        });
-        const data = await res.json();
-        if (data.success || pass === '1234') {
-          sessionStorage.setItem('evreka_admin_logged', 'true');
-          document.getElementById('login-screen').classList.add('hidden');
-          document.getElementById('dashboard').classList.remove('hidden');
-          playNotificationSound();
-          showToast("Giriş başarılı!");
-          fetchOrdersFromServer();
-          setInterval(fetchOrdersFromServer, 2000);
-        } else {
-          showToast(data.error || 'Geçersiz Şifre!', 'error');
-        }
-      } catch (err) {
-        if (pass === '1234') {
-          sessionStorage.setItem('evreka_admin_logged', 'true');
-          document.getElementById('login-screen').classList.add('hidden');
-          document.getElementById('dashboard').classList.remove('hidden');
-          showToast("Giriş başarılı!");
-          fetchOrdersFromServer();
-          setInterval(fetchOrdersFromServer, 2000);
-        } else {
-          showToast('Sunucuya bağlanılamadı.', 'error');
-        }
-      }
-    }
-
-    function logout() { 
-      sessionStorage.removeItem('evreka_admin_logged');
-      location.reload(); 
-    }
-
-    async function fetchOrdersFromServer() {
+    async function loadAdminOrders() {
       try {
         const res = await fetch('/api/orders');
         const data = await res.json();
-        
-        let serverOrders = [];
         if (data.success && Array.isArray(data.orders)) {
-          serverOrders = data.orders;
-        } else {
-          serverOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
+          renderAdminOrders(data.orders);
         }
-
-        const localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-
-        cachedOrders = serverOrders.map(o => {
-          if (localStatuses[o.id]) {
-            return { ...o, status: localStatuses[o.id] };
-          }
-          return o;
-        });
-
-        localStorage.setItem('evreka_persistent_orders', JSON.stringify(cachedOrders));
-
-        const waitingOrders = cachedOrders.filter(o => o.status === 'WAITING' || o.status === 'WAITING_WAITER');
-        if (waitingOrders.length > previousOrderCount) {
-          playNotificationSound();
-          showToast("🛎️ Yeni sipariş düştü!");
-        }
-        previousOrderCount = waitingOrders.length;
-
-        updateFinancialReportsAndCounts();
-        renderOrders();
       } catch (err) {
-        cachedOrders = JSON.parse(localStorage.getItem('evreka_persistent_orders') || '[]');
-        updateFinancialReportsAndCounts();
-        renderOrders();
+        console.error("Siparişler çekilemedi:", err);
       }
     }
 
-    function updateFinancialReportsAndCounts() {
-      document.getElementById('count-ALL').innerText = cachedOrders.filter(o => o.status !== 'CANCELLED' && o.status !== 'PAID').length;
+    function renderAdminOrders(orders) {
+      const container = document.getElementById('admin-orders-container');
       
-      const waiting = cachedOrders.filter(o => o.status === 'WAITING' || o.status === 'WAITING_WAITER').length;
-      const preparing = cachedOrders.filter(o => o.status === 'PREPARING').length;
-      const served = cachedOrders.filter(o => o.status === 'SERVED').length;
-      const paid = cachedOrders.filter(o => o.status === 'PAID').length;
+      // Toplam Ciro ve Sipariş Hesabı
+      const totalRev = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      document.getElementById('total-revenue').innerText = `${totalRev} ₺`;
+      document.getElementById('total-orders-count').innerText = orders.length;
 
-      document.getElementById('count-WAITING').innerText = waiting;
-      document.getElementById('count-PREPARING').innerText = preparing;
-      document.getElementById('count-SERVED').innerText = served;
-      document.getElementById('count-PAID').innerText = paid;
-
-      document.getElementById('stat-bekleyen').innerText = waiting;
-      document.getElementById('stat-mutfakta').innerText = preparing;
-      document.getElementById('stat-servis').innerText = served;
-
-      const now = new Date();
-      const todayStr = now.toISOString().slice(0, 10);
-      const currentMonthStr = now.toISOString().slice(0, 7);
-
-      let totalCiro = 0;
-      let dailyCiro = 0;
-      let monthlyCiro = 0;
-
-      cachedOrders.forEach(o => {
-        if (o.status === 'PAID') {
-          const price = Number(o.totalPrice) || 0;
-          totalCiro += price;
-          if (o.createdAt) {
-            const orderDateStr = String(o.createdAt).slice(0, 10);
-            const orderMonthStr = String(o.createdAt).slice(0, 7);
-            if (orderDateStr === todayStr) dailyCiro += price;
-            if (orderMonthStr === currentMonthStr) monthlyCiro += price;
-          } else {
-            dailyCiro += price;
-            monthlyCiro += price;
-          }
-        }
-      });
-
-      document.getElementById('stat-ciro').innerText = `${totalCiro.toLocaleString('tr-TR')} ₺`;
-      document.getElementById('report-daily-ciro').innerText = `${dailyCiro.toLocaleString('tr-TR')} ₺`;
-      document.getElementById('report-monthly-ciro').innerText = `${monthlyCiro.toLocaleString('tr-TR')} ₺`;
-    }
-
-    function setFilter(filter) {
-      currentFilter = filter;
-      document.querySelectorAll('[id^="filter-"]').forEach(btn => {
-        btn.className = "px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-300 border border-slate-700";
-      });
-      const activeBtn = document.getElementById(`filter-${filter}`);
-      if (activeBtn) activeBtn.className = "px-4 py-2 rounded-xl font-extrabold bg-red-600 text-white";
-      renderOrders();
-    }
-
-    async function updateOrderStatus(id, newStatus) {
-      let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-      localStatuses[id] = newStatus;
-      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
-
-      const orderObj = cachedOrders.find(o => String(o.id) === String(id));
-      if (orderObj) orderObj.status = newStatus;
-
-      localStorage.setItem('evreka_persistent_orders', JSON.stringify(cachedOrders));
-
-      if (newStatus === 'PREPARING') showToast(`Sipariş #${id} Mutfağa Gönderildi`);
-      else if (newStatus === 'SERVED') showToast(`Sipariş #${id} Masaya Servis Edildi`);
-      else if (newStatus === 'PAID') showToast(`Sipariş #${id} Tahsil Edildi ve Kapatıldı`);
-
-      renderOrders();
-      updateFinancialReportsAndCounts();
-
-      try {
-        if (newStatus === 'PREPARING') {
-          await fetch(`/api/orders/${id}/approve`, { method: 'PATCH' });
-        } else {
-          await fetch(`/api/orders/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-          });
-        }
-      } catch (err) {}
-    }
-
-    function openPaymentModal(orderId) {
-      selectedOrderForPay = cachedOrders.find(o => String(o.id) === String(orderId));
-      if (!selectedOrderForPay) return;
-
-      document.getElementById('pay-modal-table').innerText = `${selectedOrderForPay.tableName} - Ödeme Al`;
-      document.getElementById('pay-modal-id').innerText = `Sipariş #${selectedOrderForPay.id}`;
-      document.getElementById('pay-modal-amount').innerText = `${selectedOrderForPay.totalPrice} ₺`;
-      
-      selectPaymentType('Kredi Kartı');
-      document.getElementById('pos-status-area').classList.add('hidden');
-      document.getElementById('payment-modal').classList.remove('hidden');
-    }
-
-    function closePaymentModal() {
-      document.getElementById('payment-modal').classList.add('hidden');
-    }
-
-    function selectPaymentType(type) {
-      selectedPaymentMethod = type;
-      const cardBtn = document.getElementById('btn-pay-card');
-      const cashBtn = document.getElementById('btn-pay-cash');
-
-      if (type === 'Kredi Kartı') {
-        cardBtn.className = "p-4 rounded-2xl border-2 border-indigo-500 bg-indigo-500/20 text-indigo-300 font-black text-xs flex flex-col items-center gap-2 transition";
-        cashBtn.className = "p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 font-bold text-xs flex flex-col items-center gap-2 transition opacity-60";
-      } else {
-        cashBtn.className = "p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black text-xs flex flex-col items-center gap-2 transition";
-        cardBtn.className = "p-4 rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 font-bold text-xs flex flex-col items-center gap-2 transition opacity-60";
-      }
-    }
-
-    async function processPayment() {
-      const btn = document.getElementById('confirm-pay-btn');
-      const statusArea = document.getElementById('pos-status-area');
-      const statusText = document.getElementById('pos-status-text');
-
-      btn.disabled = true;
-      statusArea.classList.remove('hidden');
-
-      if (selectedPaymentMethod === 'Kredi Kartı') {
-        statusText.innerText = "📲 POS Cihazı İle İletişim Kuruluyor...";
-        await new Promise(r => setTimeout(r, 600));
-        statusText.innerText = "💳 Kart Okutuldu, Onay Bekleniyor...";
-        await new Promise(r => setTimeout(r, 800));
-      } else {
-        statusText.innerText = "💵 Nakit Tahsilat Kaydediliyor...";
-        await new Promise(r => setTimeout(r, 400));
-      }
-
-      await updateOrderStatus(selectedOrderForPay.id, 'PAID');
-      btn.disabled = false;
-      closePaymentModal();
-    }
-
-    function openCancelModal(id) {
-      pendingCancelOrderId = id;
-      document.getElementById('cancel-confirm-modal').classList.remove('hidden');
-      document.getElementById('confirm-cancel-btn').onclick = executeCancelOrder;
-    }
-
-    function closeCancelModal() {
-      pendingCancelOrderId = null;
-      document.getElementById('cancel-confirm-modal').classList.add('hidden');
-    }
-
-    async function executeCancelOrder() {
-      if (!pendingCancelOrderId) return;
-      const id = pendingCancelOrderId;
-      closeCancelModal();
-
-      let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
-      localStatuses[id] = 'CANCELLED';
-      localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
-
-      showToast(`Sipariş #${id} İptal Edildi`, 'error');
-      fetchOrdersFromServer();
-
-      try {
-        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
-      } catch (err) {}
-    }
-
-    function renderOrders() {
-      const container = document.getElementById('orders-container');
-
-      let filtered = cachedOrders;
-      if (currentFilter === 'WAITING') {
-        filtered = cachedOrders.filter(o => o.status === 'WAITING' || o.status === 'WAITING_WAITER');
-      } else if (currentFilter !== 'ALL') {
-        filtered = cachedOrders.filter(o => o.status === currentFilter);
-      } else {
-        filtered = cachedOrders.filter(o => o.status !== 'CANCELLED' && o.status !== 'PAID');
-      }
-
-      if (filtered.length === 0) {
-        container.innerHTML = '<div class="col-span-full p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800">Sipariş bulunamadı.</div>';
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="p-12 text-center text-slate-500 text-xs bg-slate-800/40 rounded-3xl border border-slate-800 space-y-2">
+            <i class="fa-solid fa-inbox text-3xl text-slate-600"></i>
+            <p>Henüz verilmiş bir sipariş bulunmuyor.</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = filtered.map(o => {
-        const timeFormatted = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Anlık';
-        
-        let statusBadge = '';
-        let actionButtons = '';
-        const normStatus = String(o.status).toUpperCase();
-        const isWait = (normStatus === 'WAITING' || normStatus === 'WAITING_WAITER');
+      // En yeni sipariş en üstte görünür
+      const sorted = [...orders].reverse();
 
-        if (isWait) {
-          statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Onay Bekliyor</span>';
-          actionButtons = `
-            <div class="grid grid-cols-2 gap-2">
-              <button onclick="updateOrderStatus('${o.id}', 'PREPARING')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20">
-                <i class="fa-solid fa-fire"></i> Onayla (Mutfağa)
-              </button>
-              <button onclick="openCancelModal('${o.id}')" class="bg-slate-700 hover:bg-red-600/30 hover:text-red-400 text-slate-300 font-bold text-xs py-2.5 rounded-xl transition">
-                İptal Et
-              </button>
-            </div>
-          `;
-        } else if (normStatus === 'PREPARING') {
-          statusBadge = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Mutfakta Hazırlanıyor</span>';
-          actionButtons = `
-            <button onclick="updateOrderStatus('${o.id}', 'SERVED')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
-              <i class="fa-solid fa-bell"></i> Hazır / Masaya Servis Et
-            </button>
-          `;
-        } else if (normStatus === 'SERVED') {
-          statusBadge = '<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1 rounded-lg text-[10px] font-black">Masada / Ödeme Bekliyor</span>';
-          actionButtons = `
-            <button onclick="openPaymentModal('${o.id}')" class="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
-              <i class="fa-solid fa-credit-card"></i> 💳 Ödeme Al (POS)
-            </button>
-          `;
-        } else if (normStatus === 'PAID') {
-          statusBadge = '<span class="bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">Tamamlandı (Ödendi)</span>';
-          actionButtons = `<div class="text-center text-xs text-slate-500 font-bold py-1">Masa Kapatıldı ✅</div>`;
-        } else if (normStatus === 'CANCELLED') {
-          statusBadge = '<span class="bg-slate-700 text-slate-400 border border-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-black">İptal Edildi</span>';
+      container.innerHTML = sorted.map(o => {
+        let statusTag = '';
+        let statusStr = String(o.status || 'WAITING').toUpperCase().trim();
+
+        if (statusStr === 'WAITING') {
+          statusTag = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">⏳ Garson Onayı Bekliyor</span>';
+        } else if (statusStr === 'PREPARING') {
+          statusTag = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">🔥 Mutfakta Hazırlanıyor</span>';
+        } else if (statusStr === 'SERVED') {
+          statusTag = '<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-black px-2.5 py-1 rounded-xl">🍽️ Masaya Servis Edildi</span>';
+        } else if (statusStr === 'PAID') {
+          statusTag = '<span class="bg-slate-700 text-slate-300 border border-slate-600 text-[10px] font-black px-2.5 py-1 rounded-xl">✅ Ödeme Alındı</span>';
         }
 
-        return `
-          <div class="bg-slate-800 border border-slate-700/80 rounded-3xl p-5 shadow-xl flex flex-col justify-between gap-4">
+        const itemsHtml = (o.items || []).map(i => `
+          <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
             <div>
-              <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl shadow-md">${o.tableName}</span>
-                  <span class="text-xs font-mono text-slate-400 font-bold">#${o.id}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs text-slate-400 font-bold"><i class="fa-regular fa-clock text-slate-500"></i> ${timeFormatted}</span>
-                </div>
-              </div>
+              <span class="font-bold text-slate-200">${i.title}</span>
+              ${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
+              ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5">Not: "${i.note}"</p>` : ''}
+            </div>
+            <span class="font-black text-white">${i.price} ₺</span>
+          </div>
+        `).join('');
 
-              <div class="space-y-2">
-                ${(o.items || []).map(i => `
-                  <div class="bg-slate-900/60 p-2.5 rounded-xl text-xs border border-slate-700/30 flex justify-between items-start">
-                    <div>
-                      <span class="font-extrabold text-slate-200">${i.title}</span>${i.size ? `<span class="text-red-400 font-bold ml-1">(${i.size})</span>` : ''}
-                      ${i.extras && i.extras.length > 0 ? `<p class="text-[10px] text-slate-400 mt-0.5">+ ${i.extras.join(', ')}</p>` : ''}
-                      ${i.note ? `<p class="text-[10px] text-amber-400 italic mt-0.5"><i class="fa-solid fa-comment-dots"></i> Not: "${i.note}"</p>` : ''}
-                    </div>
-                    <span class="font-black text-white ml-2 whitespace-nowrap">${i.price} ₺</span>
-                  </div>
-                `).join('')}
+        return `
+          <div class="bg-slate-800 border border-slate-700 rounded-3xl p-5 shadow-xl space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-xl">${o.tableName}</span>
+                <span class="text-slate-400 text-xs font-mono">#${o.id}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                ${statusTag}
+                <span class="text-base font-black text-amber-400">${o.totalPrice} ₺</span>
               </div>
             </div>
 
-            <div class="border-t border-slate-700/60 pt-3 mt-1 flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                ${statusBadge}
-                <div class="text-right">
-                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Toplam Tutar</span>
-                  <span class="text-lg font-black text-amber-400">${o.totalPrice} ₺</span>
-                </div>
-              </div>
-              ${actionButtons}
+            <div class="space-y-2">
+              ${itemsHtml}
+            </div>
+
+            <!-- BUTON HAREKETLERİ -->
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700/60">
+              <button onclick="updateStatus(${o.id}, 'PREPARING')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-fire"></i> Mutfağa Gönder
+              </button>
+              <button onclick="updateStatus(${o.id}, 'SERVED')" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/30">
+                <i class="fa-solid fa-utensils"></i> Masaya Servis Et
+              </button>
+              <button onclick="updateStatus(${o.id}, 'PAID')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-extrabold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-check"></i> Ödendi Yap
+              </button>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    async function updateStatus(orderId, newStatus) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Yerel durumu eşitle
+          let localStatuses = JSON.parse(localStorage.getItem('evreka_order_statuses') || '{}');
+          localStatuses[String(orderId)] = newStatus;
+          localStorage.setItem('evreka_order_statuses', JSON.stringify(localStatuses));
+          
+          loadAdminOrders();
+        }
+      } catch (err) {
+        console.error("Durum güncellenemedi:", err);
+      }
     }
   </script>
 </body>
