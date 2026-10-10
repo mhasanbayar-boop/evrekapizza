@@ -12,7 +12,6 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
-    /* KAYAR SEPET ÇEKMECESİ (DRAWER) */
     .cart-drawer {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       transform: translateY(100%);
@@ -45,7 +44,6 @@
         </div>
       </div>
 
-      <!-- Masa Seçim Butonu (Seçim yapılana kadar kırmızı uyarı verir) -->
       <button id="table-select-btn" onclick="openTableModal()" class="bg-red-600/20 text-red-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-red-500/40 flex items-center gap-2 shadow-inner transition animate-pulse">
         <i class="fa-solid fa-chair"></i>
         <span id="active-table-display">⚠️ Masa Seçilmedi</span>
@@ -72,8 +70,6 @@
 
   <!-- MÜŞTERİ MENÜ ALANI -->
   <main class="flex-1 max-w-xl w-full mx-auto pb-28">
-    
-    <!-- Hero Banner -->
     <div class="p-4">
       <div class="bg-gradient-to-r from-red-600 via-amber-600 to-orange-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
         <div class="absolute -right-4 -bottom-4 opacity-15 text-9xl">🍕</div>
@@ -87,15 +83,14 @@
 
     <!-- Kategori Filtreleri -->
     <div class="px-4 overflow-x-auto no-scrollbar flex gap-2 py-1 sticky top-[65px] z-20 bg-slate-100/90 backdrop-blur-md">
-      <button onclick="filterCategory('all')" class="cat-btn active-cat px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap">Tüm Menü</button>
-      <button onclick="filterCategory('pizza')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold hover:bg-slate-50 whitespace-nowrap">Pizzalar</button>
-      <button onclick="filterCategory('side')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold hover:bg-slate-50 whitespace-nowrap">Atıştırmalıklar</button>
-      <button onclick="filterCategory('beverage')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold hover:bg-slate-50 whitespace-nowrap">İçecekler</button>
-      <button onclick="filterCategory('dessert')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold hover:bg-slate-50 whitespace-nowrap">Tatlılar</button>
-      <button onclick="filterCategory('sauce')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold hover:bg-slate-50 whitespace-nowrap">Soslar</button>
+      <button onclick="filterCategory('all')" class="cat-btn px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-black shadow-sm whitespace-nowrap">Tüm Menü</button>
+      <button onclick="filterCategory('pizza')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Pizzalar</button>
+      <button onclick="filterCategory('side')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Atıştırmalıklar</button>
+      <button onclick="filterCategory('beverage')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">İçecekler</button>
+      <button onclick="filterCategory('dessert')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Tatlılar</button>
+      <button onclick="filterCategory('sauce')" class="cat-btn px-4 py-2 rounded-2xl bg-white text-slate-600 border border-slate-200 text-xs font-bold whitespace-nowrap">Soslar</button>
     </div>
 
-    <!-- Ürün Kartları Listesi -->
     <div class="px-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" id="product-list"></div>
 
     <footer class="mt-12 text-center py-6 border-t border-slate-200 text-slate-400 text-xs">
@@ -119,7 +114,7 @@
     </div>
   </div>
 
-  <!-- OVERLAY VE KAYAR SEPET ÇEKMECESİ -->
+  <!-- KAYAR SEPET ÇEKMECESİ -->
   <div id="drawer-overlay" onclick="toggleCartDrawer()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
 
   <div id="cart-drawer" class="cart-drawer fixed bottom-0 right-0 left-0 sm:left-auto sm:top-0 sm:w-96 bg-white z-50 rounded-t-3xl sm:rounded-l-3xl sm:rounded-t-none max-h-[85vh] sm:max-h-full flex flex-col shadow-2xl">
@@ -146,7 +141,7 @@
     </div>
   </div>
 
-  <!-- ZORUNLU MASA SEÇİM MODALI (Kapatma Tuşu Yoktur) -->
+  <!-- ZORUNLU MASA SEÇİM MODALI -->
   <div id="table-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-slate-100">
       <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -157,7 +152,6 @@
         <p class="text-xs text-slate-500 mt-1">Siparişlerinizin karışmaması için lütfen bulunduğunuz masayı seçin.</p>
       </div>
       
-      <!-- Masa Butonları -->
       <div class="grid grid-cols-3 gap-2 py-2" id="table-buttons-grid"></div>
       
       <button onclick="confirmTableSelection()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-red-600/30">
@@ -166,7 +160,7 @@
     </div>
   </div>
 
-  <!-- Ürün Detay & Boyut/Ekstra Modalı -->
+  <!-- Ürün Detay Modalı -->
   <div id="options-modal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl flex flex-col">
       <div class="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-3xl bg-slate-100">
@@ -192,7 +186,7 @@
 
       <div class="mt-5">
         <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Mutfak / Garson Notu</label>
-        <input type="text" id="modal-note" maxlength="200" placeholder="Örn: Acısı bol olsun, mantar çıkarılsın..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
+        <input type="text" id="modal-note" maxlength="200" placeholder="Örn: Acısı bol olsun..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
       </div>
 
       <div class="mt-6 pt-3 border-t">
@@ -204,10 +198,8 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
   <script>
     const catalog = [
-      // PIZZALAR
       {
         id: 'piz-01', category: 'pizza', title: 'Evreka Special Pizza', description: 'Özel mozarella peyniri, dana sucuk, mantar, mısır, zeytin, kapya biber ve özel domates sosu.', basePrice: 280,
         image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
@@ -227,51 +219,35 @@
         extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
       },
       {
-        id: 'piz-04', category: 'pizza', title: 'Quattro Formaggi (4 Peynirli)', description: 'Gorgonzola, parmesan, mozarella ve taze rokfor peynirinin muhteşem uyumu.', basePrice: 290,
-        image: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 60 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 120 }],
-        extras: [{ id: 'ex-honey', name: 'Süzme Bal Dokunuşu', price: 20 }]
-      },
-      {
-        id: 'piz-05', category: 'pizza', title: 'BBQ Tavuklu & Mısırlı', description: 'Izgara tavuk dilimleri, barbekü sos, karamelize soğan, mısır ve özel peynir harcı.', basePrice: 250,
-        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 50 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 100 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
-      },
-      {
-        id: 'piz-06', category: 'pizza', title: 'Füme Kaburga & Roka', description: 'Meşe odununda tütsülenmiş dana kaburga dilimleri, taze roka, parmesan rendesi ve balzamik sirke.', basePrice: 340,
-        image: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=800&q=80',
-        sizes: [{ id: 'sz-s', name: 'Küçük (25cm)', priceOffset: 0 }, { id: 'sz-m', name: 'Orta (30cm)', priceOffset: 70 }, { id: 'sz-l', name: 'Büyük (35cm)', priceOffset: 140 }],
-        extras: [{ id: 'ex-cheese', name: 'Peynir Kenar', price: 45 }]
-      },
-      // ATIŞTIRMALIKLAR
-      { id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması, yanında mayo & ketçap ile.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'sd-02', category: 'side', title: 'Mozarella Sticks (6 Adet)', description: 'Çıtır kaplamalı uzayan mozarella çubukları, tatlı acı sos eşliğinde.', basePrice: 120, image: 'https://images.unsplash.com/photo-1531749668029-2db88e4276c7?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'sd-03', category: 'side', title: 'Çıtır Tavuk Kovası', description: '6 adet baharatlı tavuk tenders ve özel dip sos.', basePrice: 150, image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      // İÇECEKLER
+        id: 'sd-01', category: 'side', title: 'Çıtır Patates Kovanı', description: 'Özel baharat çeşnili patates kızartması.', basePrice: 85, image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
       { id: 'bev-01', category: 'beverage', title: 'Coca-Cola Zero (330ml)', description: 'Buz gibi kutu soğuk meşrubat.', basePrice: 45, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'bev-02', category: 'beverage', title: 'Fesleğenli Ev Yapımı Limonata', description: 'Taze tıkılmış limon suyu, fesleğen ve doğal pancar şekeri.', basePrice: 65, image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'bev-03', category: 'beverage', title: 'San Pellegrino Maden Suyu (250ml)', description: 'İtalyan doğal maden suyu.', basePrice: 55, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      // TATLILAR
-      { id: 'des-01', category: 'dessert', title: 'Sıcak Çikolatalı Sufle', description: 'Akışkan Belçika çikolatalı nefis sufle, vanilyalı dondurma ile.', basePrice: 125, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'des-02', category: 'dessert', title: 'Tiramisu Tradizionale', description: 'Maskarpone peynirli ve espresso ıslatmalı orijinal İtalyan tatlısı.', basePrice: 135, image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      // SOSLAR
-      { id: 'sc-01', category: 'sauce', title: 'Sarımsaklı Maya Sos', description: 'Taze sarımsak ve otlu dip sos.', basePrice: 20, image: 'https://images.unsplash.com/photo-1472476443507-c7a5948772fc?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] },
-      { id: 'sc-02', category: 'sauce', title: 'Acı Jalapeno Mayo', description: 'Meksika biberli hafif acı mayonez.', basePrice: 20, image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
+      { id: 'des-01', category: 'dessert', title: 'Sıcak Çikolatalı Sufle', description: 'Akışkan Belçika çikolatalı nefis sufle.', basePrice: 125, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80', sizes: [], extras: [] }
     ];
 
-    let currentTable = null; // Başlangıçta boş
+    let currentTable = localStorage.getItem('evreka_customer_table') || null;
+    let activeOrderId = localStorage.getItem('evreka_active_order_id') || null;
     let cart = [];
     let selectedProduct = null;
     let selectedSize = null;
     let selectedExtras = [];
-    let activeOrderId = null;
     let trackingInterval = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       renderProducts('all');
       renderTableButtons();
-      openTableModal(); // Sayfa açılır açılmaz zorunlu masa modalını göster
+
+      if (currentTable) {
+        document.getElementById('table-select-btn').className = "bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 shadow-inner transition";
+        document.getElementById('active-table-display').innerText = currentTable;
+        document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
+        closeTableModal();
+      } else {
+        openTableModal();
+      }
+
+      if (activeOrderId) {
+        startOrderTracking(activeOrderId);
+      }
     });
 
     function renderTableButtons() {
@@ -294,26 +270,22 @@
       renderTableButtons();
     }
 
-    // Masa Seçim Onayı
     function confirmTableSelection() {
       if (!currentTable) {
         alert("Lütfen listeden bir masa numarası seçiniz!");
         return;
       }
+      localStorage.setItem('evreka_customer_table', currentTable);
       
       const btn = document.getElementById('table-select-btn');
       btn.className = "bg-emerald-600/20 text-emerald-400 font-extrabold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/40 flex items-center gap-2 shadow-inner transition";
       
       document.getElementById('active-table-display').innerText = currentTable;
       document.getElementById('cart-drawer-table-display').innerText = `Masa: ${currentTable}`;
-      
       closeTableModal();
     }
 
-    function openTableModal() { 
-      document.getElementById('table-modal').classList.remove('hidden'); 
-    }
-    
+    function openTableModal() { document.getElementById('table-modal').classList.remove('hidden'); }
     function closeTableModal() { 
       if (!currentTable) return alert("Masa numarası seçmeden devam edemezsiniz!");
       document.getElementById('table-modal').classList.add('hidden'); 
@@ -349,10 +321,7 @@
     }
 
     function openOptionsModal(id) {
-      if (!currentTable) {
-        openTableModal();
-        return;
-      }
+      if (!currentTable) { openTableModal(); return; }
 
       selectedProduct = catalog.find(p => p.id === id);
       selectedSize = selectedProduct.sizes.length > 0 ? selectedProduct.sizes[0] : null;
@@ -439,11 +408,7 @@
     }
 
     function toggleCartDrawer() {
-      if (!currentTable) {
-        openTableModal();
-        return;
-      }
-
+      if (!currentTable) { openTableModal(); return; }
       const drawer = document.getElementById('cart-drawer');
       const overlay = document.getElementById('drawer-overlay');
       
@@ -477,7 +442,6 @@
           </div>
         `).join('');
       }
-
       document.getElementById('cart-drawer-total').innerText = `${total} ₺`;
     }
 
@@ -489,7 +453,6 @@
       updateCartBar();
     }
 
-    // Node.js Backend API'ye Gerçek Sipariş Gönderimi (/api/orders)
     async function submitOrderToAPI() {
       if (!currentTable) return openTableModal();
       if (cart.length === 0) return alert('Sepetiniz boş!');
@@ -514,6 +477,7 @@
         const data = await response.json();
         if (data.success) {
           activeOrderId = data.order.id;
+          localStorage.setItem('evreka_active_order_id', activeOrderId);
           cart = [];
           updateCartBar();
           toggleCartDrawer();
@@ -529,7 +493,7 @@
       }
     }
 
-    // CANLI SİPARİŞ TAKİP SİSTEMİ
+    // CANLI SİPARİŞ TAKİP SİSTEMİ (Müşteri Teslim Edildi aşamasını anlık görür)
     function startOrderTracking(orderId) {
       const trackerBar = document.getElementById('order-tracker-bar');
       const badge = document.getElementById('tracker-status-badge');
@@ -551,11 +515,18 @@
                 badge.className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
                 badge.innerHTML = '<i class="fa-solid fa-fire animate-bounce"></i> Mutfakta Hazırlanıyor';
               } else if (myOrder.status === 'SERVED') {
+                // MÜŞTERİNİN GÖRECEĞİ TESLİM EDİLDİ / MASAYA GETİRİLDİ AŞAMASI
                 badge.className = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
-                badge.innerHTML = '<i class="fa-solid fa-utensils"></i> Masanıza Servis Edildi';
+                badge.innerHTML = '<i class="fa-solid fa-utensils"></i> Masanıza Servis Edildi (Afiyet Olsun!)';
+              } else if (myOrder.status === 'PAID') {
+                badge.className = "bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
+                badge.innerHTML = '<i class="fa-solid fa-check-double"></i> Ödendi - Masa Kapatıldı';
+                localStorage.removeItem('evreka_active_order_id');
+                clearInterval(trackingInterval);
               } else if (myOrder.status === 'CANCELLED') {
                 badge.className = "bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5";
                 badge.innerHTML = '<i class="fa-solid fa-xmark"></i> Sipariş İptal Edildi';
+                localStorage.removeItem('evreka_active_order_id');
                 clearInterval(trackingInterval);
               }
             }
